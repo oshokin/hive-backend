@@ -1,0 +1,60 @@
+version: '3'
+
+services:
+  hive-backend-db:
+    image: postgres:15.2-alpine
+    container_name: hive-backend-db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_DB: hive
+      POSTGRES_PASSWORD: hard-password
+      LC_CTYPE: ru_RU.UTF-8
+      LC_COLLATE: ru_RU.UTF-8
+    ports:
+      - "5432:5432"
+    volumes:
+      - hive-backend-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "admin", "-d", "hive" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hive-backend-network
+
+  hive-backend-app:
+    container_name: hive-backend-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hive-backend-app:latest
+    restart: always
+    ports:
+      # port values must match with value stored in "HIVE_BACKEND_SERVER_PORT"
+      - "8080:8080"
+    depends_on:
+      hive-backend-db:
+        condition: service_healthy
+    environment:
+      HIVE_BACKEND_LOG_LEVEL: INFO
+      HIVE_BACKEND_SERVER_PORT: 8080
+      HIVE_BACKEND_JWT_SECRET_KEY: lock-code-ends-with-42
+      HIVE_BACKEND_DB_HOST: hive-backend-db
+      HIVE_BACKEND_DB_PORT: 5432
+      HIVE_BACKEND_DB_NAME: hive
+      HIVE_BACKEND_DB_USER: admin
+      HIVE_BACKEND_DB_PASSWORD: hard-password
+      HIVE_BACKEND_DB_MAX_CONNECTIONS: 10
+      HIVE_BACKEND_DB_CONNECTION_LIFETIME: 1m
+    networks:
+      - hive-backend-network
+
+networks:
+  hive-backend-network:
+    name: hive-backend-network
+    driver: bridge
+
+volumes:
+  hive-backend-data:
+    name: hive-backend-data
