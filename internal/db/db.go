@@ -23,17 +23,4 @@ func GetDBPool(ctx context.Context, v *DatabaseConfiguration) (*pgxpool.Pool, er
 	poolConfig.MaxConns = int32(v.MaxConnections)
 
 	return pgxpool.ConnectConfig(ctx, poolConfig)
-
-	// connString := "postgres://user:password@localhost/dbname"
-	// poolConfig, err := pgxpool.ParseConfig(connString)
-	// if err != nil {
-	// 	return err
-	// }
-	// poolConfig.MaxConns = 10
-	// poolConfig.MinConns = 2
-	// db, err = pgxpool.ConnectConfig(context.Background(), poolConfig)
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
 }
