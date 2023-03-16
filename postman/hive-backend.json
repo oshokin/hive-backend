@@ -9,6 +9,7 @@
         {
             "name": "get list of cities",
             "protocolProfileBehavior": {
+                "disableBodyPruning": true,
                 "disabledSystemHeaders": {
                     "connection": true,
                     "accept-encoding": true,
@@ -17,7 +18,7 @@
                 }
             },
             "request": {
-                "method": "POST",
+                "method": "GET",
                 "header": [],
                 "body": {
                     "mode": "raw",
@@ -29,14 +30,25 @@
                     }
                 },
                 "url": {
-                    "raw": "localhost:8080/v1/cities",
+                    "raw": "localhost:8080/v1/city/list?search=Москва&limit=20",
                     "host": [
                         "localhost"
                     ],
                     "port": "8080",
                     "path": [
                         "v1",
-                        "cities"
+                        "city",
+                        "list"
+                    ],
+                    "query": [
+                        {
+                            "key": "search",
+                            "value": "Москва"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "20"
+                        }
                     ]
                 }
             },
@@ -57,14 +69,15 @@
                     }
                 },
                 "url": {
-                    "raw": "localhost:8080/v1/users",
+                    "raw": "localhost:8080/v1/user/create",
                     "host": [
                         "localhost"
                     ],
                     "port": "8080",
                     "path": [
                         "v1",
-                        "users"
+                        "user",
+                        "create"
                     ]
                 }
             },
@@ -85,14 +98,14 @@
                     }
                 },
                 "url": {
-                    "raw": "localhost:8080/v1/users/login",
+                    "raw": "localhost:8080/v1/user/login",
                     "host": [
                         "localhost"
                     ],
                     "port": "8080",
                     "path": [
                         "v1",
-                        "users",
+                        "user",
                         "login"
                     ]
                 }
@@ -105,14 +118,14 @@
                 "method": "POST",
                 "header": [],
                 "url": {
-                    "raw": "localhost:8080/v1/users/logout",
+                    "raw": "localhost:8080/v1/user/logout",
                     "host": [
                         "localhost"
                     ],
                     "port": "8080",
                     "path": [
                         "v1",
-                        "users",
+                        "user",
                         "logout"
                     ]
                 }
@@ -137,14 +150,14 @@
                     }
                 },
                 "url": {
-                    "raw": "localhost:8080/v1/users/1",
+                    "raw": "localhost:8080/v1/user/1",
                     "host": [
                         "localhost"
                     ],
                     "port": "8080",
                     "path": [
                         "v1",
-                        "users",
+                        "user",
                         "1"
                     ]
                 }

@@ -47,11 +47,11 @@ func NewServer(ctx context.Context,
 	r.Use(middleware.RequestID, middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/ping"))
 
-	r.Post("/v1/users", s.createUserHandler)
-	r.Post("/v1/users/login", s.loginUserHandler)
-	r.With(s.authMiddleware).Post("/v1/users/logout", s.logoutUserHandler)
-	r.Get("/v1/users/{id}", s.getUserHandler)
-	r.Post("/v1/cities", s.getCitiesHandler)
+	r.Get("/v1/city/list", s.getCitiesHandler)
+	r.Post("/v1/user/create", s.createUserHandler)
+	r.Post("/v1/user/login", s.loginUserHandler)
+	r.With(s.authMiddleware).Post("/v1/user/logout", s.logoutUserHandler)
+	r.Get("/v1/user/{id}", s.getUserHandler)
 
 	return s
 }

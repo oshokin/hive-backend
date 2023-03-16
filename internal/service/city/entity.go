@@ -50,6 +50,10 @@ func (s *service) GetServiceModels(source []*repo.City) []*City {
 }
 
 func (r *GetListRequest) Validate() error {
+	if r.Limit == 0 {
+		r.Limit = maxCitiesLimit
+	}
+
 	if r.Limit > maxCitiesLimit {
 		return fmt.Errorf("maximum cities count in one request is %d items", maxCitiesLimit)
 	}

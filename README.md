@@ -33,11 +33,11 @@ Hive-Backend is an educational social network application.
 
 ## Endpoints
 
-- **POST** `/v1/cities`: Get list of cities.
-- **POST** `/v1/users`: Create a new user.
-- **POST** `/v1/users/login`: Authenticate user and generate a JWT token.
-- **POST** `/v1/users/logout`: Logout user and invalidate the JWT token.
-- **GET** `/v1/users/{id}`: Get a user by ID.
+- **GET** `/v1/city/list`: Get list of cities.
+- **POST** `/v1/user/create`: Create a new user.
+- **POST** `/v1/user/login`: Authenticate user and generate a JWT token.
+- **POST** `/v1/user/logout`: Logout user and invalidate the JWT token.
+- **GET** `/v1/user/{id}`: Get a user by ID.
 
 ## Postman Collection
 

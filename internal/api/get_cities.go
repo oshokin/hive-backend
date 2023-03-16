@@ -1,9 +1,9 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/render"
 	city_service "github.com/oshokin/hive-backend/internal/service/city"
@@ -15,12 +15,6 @@ type (
 		Name string `json:"name"`
 	}
 
-	getCitiesRequest struct {
-		Search string `json:"search"`
-		Limit  uint64 `json:"limit"`
-		Cursor int16  `json:"cursor"`
-	}
-
 	getCitiesResponse struct {
 		Items   []*getCitiesItem `json:"items"`
 		HasNext bool             `json:"has_next"`
@@ -29,24 +23,19 @@ type (
 
 func (s *server) getCitiesHandler(w http.ResponseWriter, r *http.Request) {
 	var (
-		req getCitiesRequest
-		err = json.NewDecoder(r.Body).Decode(&req)
+		queryParams = r.URL.Query()
+		search      = queryParams.Get("search")
+		limit, _    = strconv.ParseUint(queryParams.Get("limit"), 10, 64)
+		cursor, _   = strconv.ParseInt(queryParams.Get("cursor"), 10, 16)
 	)
 
-	if err != nil {
-		s.renderError(w, r,
-			http.StatusBadRequest,
-			fmt.Sprintf("failed to decode request: %s", err.Error()))
-		return
-	}
-
 	serviceRequest := &city_service.GetListRequest{
-		Search: req.Search,
-		Limit:  req.Limit,
-		Cursor: req.Cursor,
+		Search: search,
+		Limit:  limit,
+		Cursor: int16(cursor),
 	}
 
-	if err = serviceRequest.Validate(); err != nil {
+	if err := serviceRequest.Validate(); err != nil {
 		s.renderError(w, r,
 			http.StatusBadRequest,
 			err.Error())
