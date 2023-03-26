@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oshokin/hive-backend/internal/api"
 	"github.com/oshokin/hive-backend/internal/config"
 	"github.com/oshokin/hive-backend/internal/db"
@@ -45,8 +45,8 @@ func NewApplication(ctx context.Context) (*Application, error) {
 	cityRepo := city_repo.NewRepository(dbPool)
 	cityService := city_service.NewService(cityRepo)
 	userRepo := user_repo.NewRepository(dbPool)
-	userService := user_service.NewService(userRepo)
-	server := api.NewServer(ctx, userService, cityService, config.JWTSecretKey)
+	userService := user_service.NewService(userRepo, cityService)
+	server := api.NewServer(ctx, userService, cityService, config)
 
 	return &Application{
 		config:      config,

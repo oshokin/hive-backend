@@ -30,12 +30,12 @@ services:
       dockerfile: Dockerfile
     image: hive-backend-app:latest
     restart: always
-    ports:
-      # port values must match with value stored in "HIVE_BACKEND_SERVER_PORT"
-      - "8080:8080"
     depends_on:
       hive-backend-db:
         condition: service_healthy
+    ports:
+      # port values must match with value stored in "HIVE_BACKEND_SERVER_PORT"
+      - "8080:8080"
     environment:
       HIVE_BACKEND_LOG_LEVEL: INFO
       HIVE_BACKEND_SERVER_PORT: 8080
@@ -47,6 +47,58 @@ services:
       HIVE_BACKEND_DB_PASSWORD: hard-password
       HIVE_BACKEND_DB_MAX_CONNECTIONS: 10
       HIVE_BACKEND_DB_CONNECTION_LIFETIME: 1m
+      HIVE_BACKEND_PROMETHEUS_HOST: hive-backend-app
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hive-backend-network
+
+  hive-backend-prometheus:
+    container_name: hive-backend-prometheus
+    image: prom/prometheus:latest
+    restart: always
+    # depends_on:
+    #   hive-backend-app:
+    #     condition: service_healthy
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - hive-backend-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    # environment:
+    #   HIVE_BACKEND_PROMETHEUS_HOST: hive-backend-app
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:9090/-/healthy"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hive-backend-network
+
+  hive-backend-grafana:
+    container_name: hive-backend-grafana
+    image: grafana/grafana:latest
+    restart: always
+    depends_on:
+      hive-backend-prometheus:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./configs/grafana_dashboard.json:/var/lib/grafana/dashboards/grafana_dashboard.json
+      - hive-backend-grafana-data:/var/lib/grafana
     networks:
       - hive-backend-network
 
@@ -58,3 +110,7 @@ networks:
 volumes:
   hive-backend-data:
     name: hive-backend-data
+  hive-backend-prometheus-data:
+    name: hive-backend-prometheus-data
+  hive-backend-grafana-data:
+    name: hive-backend-grafana-data

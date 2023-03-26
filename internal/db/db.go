@@ -3,7 +3,9 @@ package db
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/IBM/pgxpoolprometheus"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func GetDBPool(ctx context.Context, v *DatabaseConfiguration) (*pgxpool.Pool, error) {
@@ -22,5 +24,14 @@ func GetDBPool(ctx context.Context, v *DatabaseConfiguration) (*pgxpool.Pool, er
 	poolConfig.MaxConnLifetime = v.ConnectionLifetime
 	poolConfig.MaxConns = int32(v.MaxConnections)
 
-	return pgxpool.ConnectConfig(ctx, poolConfig)
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	collector := pgxpoolprometheus.NewCollector(pool,
+		map[string]string{"db_name": v.Name})
+	prometheus.MustRegister(collector)
+
+	return pool, nil
 }

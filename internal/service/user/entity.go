@@ -5,6 +5,7 @@ import (
 	"time"
 
 	validator "github.com/asaskevich/govalidator"
+	user_repo "github.com/oshokin/hive-backend/internal/repository/user"
 )
 
 type (
@@ -31,6 +32,18 @@ type (
 		PasswordHash string
 	}
 
+	SearchByNamePrefixesRequest struct {
+		FirstName string
+		LastName  string
+		Limit     uint64
+		Cursor    int64
+	}
+
+	SearchByNamePrefixesResponse struct {
+		Items   []*User
+		HasNext bool
+	}
+
 	GenderType string
 )
 
@@ -40,7 +53,40 @@ const (
 	Unknown GenderType = "UNKNOWN"
 )
 
-func (u *User) Validate() error {
+const maxUsersLimit = 50
+
+func (s *service) GetServiceModel(source *user_repo.User) *User {
+	if source == nil {
+		return nil
+	}
+
+	return &User{
+		ID:        source.ID,
+		Email:     source.Email,
+		CityID:    source.CityID,
+		FirstName: source.FirstName,
+		LastName:  source.LastName,
+		Birthdate: source.Birthdate,
+		Gender:    GenderType(source.Gender),
+		Interests: source.Interests,
+	}
+}
+
+func (s *service) GetServiceModels(source []*user_repo.User) []*User {
+	result := make([]*User, 0, len(source))
+	for _, v := range source {
+		sm := s.GetServiceModel(v)
+		if sm == nil {
+			continue
+		}
+
+		result = append(result, sm)
+	}
+
+	return result
+}
+
+func (u *User) validate() error {
 	if !validator.IsEmail(u.Email) {
 		return fmt.Errorf("invalid email format")
 	}
@@ -72,13 +118,33 @@ func (u *User) Validate() error {
 	return nil
 }
 
-func (u *LoginCredentials) Validate() error {
+func (u *LoginCredentials) validate() error {
 	if !validator.IsEmail(u.Email) {
 		return fmt.Errorf("invalid email format")
 	}
 
 	if len(u.Password) == 0 {
 		return fmt.Errorf("password is required")
+	}
+
+	return nil
+}
+
+func (r *SearchByNamePrefixesRequest) validate() error {
+	if len(r.FirstName) == 0 {
+		return fmt.Errorf("first name is required")
+	}
+
+	if len(r.LastName) == 0 {
+		return fmt.Errorf("last name is required")
+	}
+
+	if r.Limit > maxUsersLimit {
+		return fmt.Errorf("limit cannot be greater than %d", maxUsersLimit)
+	}
+
+	if r.Cursor < 0 {
+		return fmt.Errorf("cursor must be greater than or equal to 0")
 	}
 
 	return nil

@@ -11,6 +11,7 @@ import (
 )
 
 type Configuration struct {
+	AppName      string
 	LogLevel     string
 	ServerPort   uint16
 	JWTSecretKey []byte
@@ -18,7 +19,7 @@ type Configuration struct {
 }
 
 const (
-	version                     = "1.0.0"
+	defaultAppName              = "hive-backend"
 	defaultEnvPrefix            = "HIVE_BACKEND"
 	defaultServerPort           = uint16(8080)
 	defaultDBMaxConnections     = 10
@@ -47,6 +48,7 @@ func GetDefaults(ctx context.Context) (*Configuration, error) {
 
 func getConfigFromEnvVars() *Configuration {
 	return &Configuration{
+		AppName:      defaultAppName,
 		LogLevel:     viper.GetString("LOG_LEVEL"),
 		ServerPort:   viper.GetUint16("SERVER_PORT"),
 		JWTSecretKey: []byte(viper.GetString("JWT_SECRET_KEY")),

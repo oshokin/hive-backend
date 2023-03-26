@@ -2,11 +2,13 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/oshokin/hive-backend/internal/service/common"
 )
 
 type (
@@ -27,6 +29,55 @@ const (
 	refreshTokenCookieName            = "refresh_token"
 	userIDHeader           userIDType = "user_id"
 )
+
+var errAccessDenied = common.NewError(common.ErrStatusUnauthorized, errors.New("access denied"))
+
+func (s *server) authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		accessTokenCookie, err := r.Cookie(accessTokenCookieName)
+		if err != nil {
+			s.renderError(w, r, errAccessDenied)
+			return
+		}
+
+		refreshTokenCookie, err := r.Cookie(refreshTokenCookieName)
+		if err != nil {
+			s.renderError(w, r, errAccessDenied)
+			return
+		}
+
+		accessToken := accessTokenCookie.Value
+		accesClaims, err := s.verifyAccessToken(accessToken)
+		if err != nil {
+			s.renderError(w, r, common.NewError(common.ErrStatusUnauthorized, err))
+			return
+		}
+
+		refreshToken := refreshTokenCookie.Value
+		refreshClaims, err := s.verifyRefreshToken(refreshToken)
+		if err != nil {
+			s.cache.Delete(refreshToken)
+			s.renderError(w, r, common.NewError(common.ErrStatusUnauthorized, err))
+			return
+		}
+
+		userID, isFound := s.cache.Get(refreshToken)
+		if !isFound {
+			s.renderError(w, r, errAccessDenied)
+			return
+		}
+
+		if userID != accesClaims.UserID || accesClaims.UserID != refreshClaims.UserID {
+			s.renderError(w, r, errAccessDenied)
+			return
+		}
+
+		ctx := r.Context()
+		r = r.WithContext(context.WithValue(ctx, userIDHeader, accesClaims.UserID))
+
+		next.ServeHTTP(w, r)
+	})
+}
 
 func (s *server) generateAccessToken(userID int64) (string, error) {
 	now := time.Now()
@@ -92,51 +143,4 @@ func (s *server) verifyRefreshToken(tokenString string) (*UserClaims, error) {
 	}
 
 	return claims, nil
-}
-
-func (s *server) authMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		accessTokenCookie, err := r.Cookie(accessTokenCookieName)
-		if err != nil {
-			s.renderError(w, r, http.StatusUnauthorized, "access denied")
-			return
-		}
-
-		refreshTokenCookie, err := r.Cookie(refreshTokenCookieName)
-		if err != nil {
-			s.renderError(w, r, http.StatusUnauthorized, "access denied")
-			return
-		}
-
-		accessToken := accessTokenCookie.Value
-		accesClaims, err := s.verifyAccessToken(accessToken)
-		if err != nil {
-			s.renderError(w, r, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		refreshToken := refreshTokenCookie.Value
-		refreshClaims, err := s.verifyRefreshToken(refreshToken)
-		if err != nil {
-			s.cache.Delete(refreshToken)
-			s.renderError(w, r, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		userID, isFound := s.cache.Get(refreshToken)
-		if !isFound {
-			s.renderError(w, r, http.StatusUnauthorized, "access denied")
-			return
-		}
-
-		if userID != accesClaims.UserID || accesClaims.UserID != refreshClaims.UserID {
-			s.renderError(w, r, http.StatusUnauthorized, "access denied")
-			return
-		}
-
-		ctx := r.Context()
-		r = r.WithContext(context.WithValue(ctx, userIDHeader, accesClaims.UserID))
-
-		next.ServeHTTP(w, r)
-	})
 }

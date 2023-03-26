@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/render"
 	city_service "github.com/oshokin/hive-backend/internal/service/city"
+	"github.com/oshokin/hive-backend/internal/service/common"
 )
 
 type (
@@ -23,31 +24,28 @@ type (
 
 func (s *server) getCitiesHandler(w http.ResponseWriter, r *http.Request) {
 	var (
-		queryParams = r.URL.Query()
-		search      = queryParams.Get("search")
-		limit, _    = strconv.ParseUint(queryParams.Get("limit"), 10, 64)
-		cursor, _   = strconv.ParseInt(queryParams.Get("cursor"), 10, 16)
+		queryParams    = r.URL.Query()
+		search         = queryParams.Get("search")
+		limit, _       = strconv.ParseUint(queryParams.Get("limit"), 10, 64)
+		cursor, _      = strconv.ParseInt(queryParams.Get("cursor"), 10, 16)
+		ctx            = r.Context()
+		serviceRequest = &city_service.GetListRequest{
+			Search: search,
+			Limit:  limit,
+			Cursor: int16(cursor),
+		}
 	)
 
-	serviceRequest := &city_service.GetListRequest{
-		Search: search,
-		Limit:  limit,
-		Cursor: int16(cursor),
-	}
-
-	if err := serviceRequest.Validate(); err != nil {
-		s.renderError(w, r,
-			http.StatusBadRequest,
-			err.Error())
-		return
-	}
-
-	ctx := r.Context()
 	res, err := s.cityService.GetList(ctx, serviceRequest)
 	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to get cities list: %s", err.Error()))
+		switch v := err.(type) {
+		case *common.Error:
+			s.renderError(w, r, v)
+		default:
+			s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
+				fmt.Errorf("failed to get cities list: %w", err)))
+		}
+
 		return
 	}
 

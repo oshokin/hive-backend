@@ -24,6 +24,8 @@ type (
 	}
 )
 
+const maxCitiesLimit = 50
+
 func (s *service) GetServiceModel(source *repo.City) *City {
 	if source == nil {
 		return nil
@@ -49,11 +51,7 @@ func (s *service) GetServiceModels(source []*repo.City) []*City {
 	return result
 }
 
-func (r *GetListRequest) Validate() error {
-	if r.Limit == 0 {
-		r.Limit = maxCitiesLimit
-	}
-
+func (r *GetListRequest) validate() error {
 	if r.Limit > maxCitiesLimit {
 		return fmt.Errorf("maximum cities count in one request is %d items", maxCitiesLimit)
 	}

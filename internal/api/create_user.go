@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/render"
+	"github.com/oshokin/hive-backend/internal/service/common"
 	user_service "github.com/oshokin/hive-backend/internal/service/user"
 )
 
@@ -33,37 +34,17 @@ func (s *server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		s.renderError(w, r,
-			http.StatusBadRequest,
-			fmt.Sprintf("failed to decode request: %s", err.Error()))
+			common.NewError(common.ErrStatusBadRequest,
+				fmt.Errorf("failed to decode request: %w", err)))
 		return
 	}
 
 	var (
-		ctx    = r.Context()
-		cityID = req.CityID
-	)
-
-	city, err := s.cityService.GetByID(ctx, cityID)
-	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to check if city exists by ID: %s", err.Error()))
-		return
-	}
-
-	if city == nil {
-		s.renderError(w, r,
-			http.StatusBadRequest,
-			fmt.Sprintf("city with ID %d is not found", cityID))
-		return
-	}
-
-	var (
-		email = req.Email
-		user  = &user_service.User{
-			Email:     email,
+		ctx = r.Context()
+		u   = &user_service.User{
+			Email:     req.Email,
 			Password:  req.Password,
-			CityID:    cityID,
+			CityID:    req.CityID,
 			FirstName: req.FirstName,
 			LastName:  req.LastName,
 			Birthdate: time.Time(req.Birthdate),
@@ -72,29 +53,16 @@ func (s *server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	)
 
-	if err := user.Validate(); err != nil {
-		s.renderError(w, r, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	userExists, err := s.userService.CheckIfExistsByEmail(ctx, email)
+	userID, err := s.userService.Add(ctx, u)
 	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to check if user exists by e-mail: %s", err.Error()))
-		return
-	}
+		switch v := err.(type) {
+		case *common.Error:
+			s.renderError(w, r, v)
+		default:
+			s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
+				fmt.Errorf("failed to register user: %w", err)))
+		}
 
-	if userExists {
-		s.renderError(w, r, http.StatusConflict, "email is already taken")
-		return
-	}
-
-	userID, err := s.userService.Add(ctx, user)
-	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to register user: %s", err.Error()))
 		return
 	}
 

@@ -19,4 +19,16 @@ type (
 		ID           int64
 		PasswordHash string
 	}
+
+	SearchByNamePrefixesRequest struct {
+		FirstName string
+		LastName  string
+		Limit     uint64
+		Cursor    int64
+	}
+
+	SearchByNamePrefixesResponse struct {
+		Items   []*User
+		HasNext bool
+	}
 )

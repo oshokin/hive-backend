@@ -5,25 +5,14 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	pgx "github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	pgx "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type (
 	Repository interface {
 		GetByID(ctx context.Context, id int16) (*City, error)
 		GetList(ctx context.Context, req *GetListRequest) (*GetListResponse, error)
-	}
-
-	GetListRequest struct {
-		Search string
-		Limit  uint64
-		Cursor int16
-	}
-
-	GetListResponse struct {
-		Items   []*City
-		HasNext bool
 	}
 
 	repository struct {

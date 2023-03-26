@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/render"
+	"github.com/oshokin/hive-backend/internal/service/common"
 	user_service "github.com/oshokin/hive-backend/internal/service/user"
 )
 
@@ -27,69 +28,58 @@ func (s *server) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		s.renderError(w, r,
-			http.StatusBadRequest,
-			fmt.Sprintf("failed to decode request: %s", err.Error()))
+			common.NewError(common.ErrStatusBadRequest,
+				fmt.Errorf("failed to decode request: %w", err)))
 		return
 	}
 
-	email := req.Email
-	creds := &user_service.LoginCredentials{
-		Email:    email,
-		Password: req.Password,
-	}
+	var (
+		ctx   = r.Context()
+		creds = &user_service.LoginCredentials{
+			Email:    req.Email,
+			Password: req.Password,
+		}
+	)
 
-	if err := creds.Validate(); err != nil {
-		s.renderError(w, r, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	ctx := r.Context()
-	loginData, err := s.userService.GetLoginDataByEmail(ctx, email)
+	userID, err := s.userService.GetIDByLoginCredentials(ctx, creds)
 	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to read user info: %s", err.Error()))
+		switch v := err.(type) {
+		case *common.Error:
+			s.renderError(w, r, v)
+		default:
+			s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
+				fmt.Errorf("failed to login user: %w", err)))
+		}
+
 		return
 	}
 
-	if loginData == nil {
-		s.renderError(w, r,
-			http.StatusBadRequest, "invalid email or password")
-		return
-	}
-
-	isPasswordCorrect, err := s.userService.IsPasswordCorrect(loginData.PasswordHash, req.Password)
+	accessToken, err := s.generateAccessToken(userID)
 	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to check password: %s", err.Error()))
+		s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
+			fmt.Errorf("failed to generate access token: %w", err)))
+
 		return
 	}
 
-	if !isPasswordCorrect {
-		s.renderError(w, r,
-			http.StatusBadRequest, "invalid email or password")
-		return
-	}
-
-	accessToken, err := s.generateAccessToken(loginData.ID)
+	refreshToken, err := s.generateRefreshToken(userID)
 	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to generate access token: %s", err.Error()))
+		s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
+			fmt.Errorf("failed to generate refresh token: %w", err)))
+
 		return
 	}
 
-	refreshToken, err := s.generateRefreshToken(loginData.ID)
-	if err != nil {
-		s.renderError(w, r,
-			http.StatusInternalServerError,
-			fmt.Sprintf("failed to generate refresh token: %s", err.Error()))
-		return
-	}
+	s.cache.Set(refreshToken, userID, refreshTokenDuration)
+	s.setAuthorizationCookies(w, accessToken, refreshToken)
 
-	s.cache.Set(refreshToken, loginData.ID, refreshTokenDuration)
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &loginUserResponse{
+		Success: true,
+	})
+}
 
+func (s *server) setAuthorizationCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 	now := time.Now()
 	http.SetCookie(w, &http.Cookie{
 		Name:    accessTokenCookieName,
@@ -102,8 +92,4 @@ func (s *server) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 		Expires: now.Add(refreshTokenDuration),
 	})
 
-	render.Status(r, http.StatusOK)
-	render.JSON(w, r, &loginUserResponse{
-		Success: true,
-	})
 }

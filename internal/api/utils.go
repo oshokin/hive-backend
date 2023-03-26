@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/oshokin/hive-backend/internal/logger"
+	"github.com/oshokin/hive-backend/internal/service/common"
 )
 
 type apiError struct {
@@ -12,57 +13,24 @@ type apiError struct {
 	Message string `json:"message"`
 }
 
-const (
-	badRequestErrorCode = "BAD_REQUEST"
-	internalErrorCode   = "INTERNAL_ERROR"
-)
-
-func (s *server) getErrorCodeFromHTTPStatus(status int) string {
-	switch status {
-	case http.StatusBadRequest:
-		return badRequestErrorCode
-	case http.StatusUnauthorized:
-		return "UNAUTHORIZED"
-	case http.StatusForbidden:
-		return "FORBIDDEN"
-	case http.StatusNotFound:
-		return "NOT_FOUND"
-	case http.StatusMethodNotAllowed:
-		return "METHOD_NOT_ALLOWED"
-	case http.StatusNotAcceptable:
-		return "NOT_ACCEPTABLE"
-	case http.StatusConflict:
-		return "CONFLICT"
-	case http.StatusUnsupportedMediaType:
-		return "UNSUPPORTED_MEDIA_TYPE"
-	case http.StatusInternalServerError:
-		return internalErrorCode
-	case http.StatusServiceUnavailable:
-		return "SERVICE_UNAVAILABLE"
-	default:
-		if errorClass := status / 100; errorClass == 4 {
-			return badRequestErrorCode
-		}
-
-		return internalErrorCode
-	}
-}
-
-func (s *server) renderError(w http.ResponseWriter, r *http.Request, status int, message string) {
+func (s *server) renderError(w http.ResponseWriter, r *http.Request, err *common.Error) {
 	var (
-		errorClass = status / 100
+		errType    = err.Type
+		errMessage = err.Err.Error()
+		errStatus  = errType.HTTPStatus()
+		errClass   = errStatus / 100
 		ctx        = r.Context()
 	)
 
-	if errorClass == 4 {
-		logger.Warn(ctx, message)
+	if errClass == 4 {
+		logger.Warn(ctx, errMessage)
 	} else {
-		logger.Error(ctx, message)
+		logger.Error(ctx, errMessage)
 	}
 
-	render.Status(r, status)
+	render.Status(r, errType.HTTPStatus())
 	render.JSON(w, r, &apiError{
-		Code:    s.getErrorCodeFromHTTPStatus(status),
-		Message: message,
+		Code:    errType.String(),
+		Message: err.Err.Error(),
 	})
 }

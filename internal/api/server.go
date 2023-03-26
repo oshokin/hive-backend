@@ -9,10 +9,13 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/oshokin/hive-backend/internal/common"
+	"github.com/oshokin/hive-backend/internal/config"
 	"github.com/oshokin/hive-backend/internal/logger"
+	chi_prometheus "github.com/oshokin/hive-backend/internal/middleware/chi-prometheus"
 	city_service "github.com/oshokin/hive-backend/internal/service/city"
 	user_service "github.com/oshokin/hive-backend/internal/service/user"
 	go_cache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server interface {
@@ -34,19 +37,22 @@ const serverShutdownTimeout = 10 * time.Second
 func NewServer(ctx context.Context,
 	userService user_service.Service,
 	cityService city_service.Service,
-	jwtSecretKey []byte) Server {
+	config *config.Configuration) Server {
 	r := chi.NewRouter()
 	s := &server{
 		router:       r,
 		userService:  userService,
 		cityService:  cityService,
 		cache:        go_cache.New(cacheExpirationTime, cacheCleanupInterval),
-		jwtSecretKey: jwtSecretKey,
+		jwtSecretKey: config.JWTSecretKey,
 	}
+	r.Use(
+		chi_prometheus.NewMiddleware(config.AppName),
+		middleware.RequestID,
+		middleware.Recoverer,
+		middleware.Heartbeat("/ping"))
 
-	r.Use(middleware.RequestID, middleware.Recoverer)
-	r.Use(middleware.Heartbeat("/ping"))
-
+	r.Handle("/metrics", promhttp.Handler())
 	r.Get("/v1/city/list", s.getCitiesHandler)
 	r.Post("/v1/user/create", s.createUserHandler)
 	r.Post("/v1/user/login", s.loginUserHandler)
