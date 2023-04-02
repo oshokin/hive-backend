@@ -1,7 +1,6 @@
 package config
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -10,14 +9,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Configuration represents the application configuration.
 type Configuration struct {
-	AppName      string
-	LogLevel     string
-	ServerPort   uint16
-	JWTSecretKey []byte
-	DBConfig     *db.DatabaseConfiguration
+	AppName      string                    // Name of the application.
+	LogLevel     string                    // Logging level of the application.
+	ServerPort   uint16                    // Port on which the application listens for requests.
+	JWTSecretKey []byte                    // Secret key used to sign and verify JSON Web Tokens.
+	DBConfig     *db.DatabaseConfiguration // Database configuration.
 }
 
+// Constants with default values used for initialization.
 const (
 	defaultAppName              = "hive-backend"
 	defaultEnvPrefix            = "HIVE_BACKEND"
@@ -26,13 +27,15 @@ const (
 	defaultDBConnectionLifetime = 1 * time.Minute
 )
 
+// Errors that can occur during configuration validation.
 var (
 	errConfigIsEmpty                              = errors.New("configuration is empty")
 	errJWTKeyIsEmpty                              = errors.New("jwt secret key is empty")
 	errDatabaseConnectionConfigurationIsIncorrect = errors.New("database connection configuration is incorrect")
 )
 
-func GetDefaults(ctx context.Context) (*Configuration, error) {
+// GetDefaults loads configuration from environment variables and returns a pointer to Configuration.
+func GetDefaults() (*Configuration, error) {
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix(defaultEnvPrefix)
 
@@ -64,6 +67,7 @@ func getConfigFromEnvVars() *Configuration {
 	}
 }
 
+// Validate checks if Configuration is valid.
 func (c *Configuration) Validate() error {
 	if c == nil {
 		return errConfigIsEmpty

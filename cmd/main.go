@@ -10,6 +10,7 @@ import (
 
 func main() {
 	ctx := context.Background()
+
 	a, err := app.NewApplication(ctx)
 	if err != nil {
 		logger.FatalKV(ctx, "failed to create app", common.ErrorTag, err)

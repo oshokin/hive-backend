@@ -8,6 +8,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// GetDBPool returns a new *pgxpool.Pool using the configuration provided in v.
+// The returned pool is already registered with a Prometheus collector.
 func GetDBPool(ctx context.Context, v *DatabaseConfiguration) (*pgxpool.Pool, error) {
 	poolConfig, err := pgxpool.ParseConfig("")
 	if err != nil {

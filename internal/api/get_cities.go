@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -38,10 +39,10 @@ func (s *server) getCitiesHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := s.cityService.GetList(ctx, serviceRequest)
 	if err != nil {
-		switch v := err.(type) {
-		case *common.Error:
-			s.renderError(w, r, v)
-		default:
+		var e *common.Error
+		if errors.As(err, &e) {
+			s.renderError(w, r, e)
+		} else {
 			s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
 				fmt.Errorf("failed to get cities list: %w", err)))
 		}
@@ -54,8 +55,17 @@ func (s *server) getCitiesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) fillGetCitiesResponse(res *city_service.GetListResponse) *getCitiesResponse {
+	if res == nil {
+		return nil
+	}
+
 	items := make([]*getCitiesItem, 0, len(res.Items))
+
 	for _, v := range res.Items {
+		if v == nil {
+			continue
+		}
+
 		items = append(items, &getCitiesItem{
 			ID:   v.ID,
 			Name: v.Name,

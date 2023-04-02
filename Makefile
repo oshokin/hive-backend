@@ -11,8 +11,9 @@ PG_DATABASE:=hive
 LOCAL_BIN:=$(CURDIR)/bin
 MIGRATIONS:=migrations
 GOLANGCI_BIN:=$(LOCAL_BIN)/golangci-lint
-GOLANGCI_TAG:=1.50.1
-GOLANGCI_LINT_VERSION:=v1.50.1
+GOLANGCI_TAG:=1.52.2
+GOLANGCI_CONFIG:=.golangci.yaml
+GOLANGCI_STRICT_CONFIG:=.golangci-strict.yaml
 
 # Check local bin version
 ifneq ($(wildcard $(GOLANGCI_BIN)),)
@@ -39,12 +40,23 @@ endif
 
 .PHONY: lint
 lint: install-lint
-	$(info Running lint...)
-	$(GOLANGCI_BIN) run --new-from-rev=origin/master --config=.golangci.yaml ./...
+ifeq ($(filter strict,$(MAKECMDGOALS)),strict)
+	@echo "Running lint in strict mode..."
+	$(GOLANGCI_BIN) run --new-from-rev=origin/master --config=$(GOLANGCI_STRICT_CONFIG) ./...
+else
+	@echo "Running lint in normal mode..."
+	$(GOLANGCI_BIN) run --new-from-rev=origin/master --config=$(GOLANGCI_CONFIG) ./...
+endif
 
 .PHONY: lint-full
 lint-full: install-lint
-	$(GOLANGCI_BIN) run --config=.golangci.yaml ./...
+ifeq ($(filter strict,$(MAKECMDGOALS)),strict)
+	@echo "Running lint-full in strict mode..."
+	$(GOLANGCI_BIN) run --config=$(GOLANGCI_STRICT_CONFIG) ./...
+else
+	@echo "Running lint-full in normal mode..."
+	$(GOLANGCI_BIN) run --config=$(GOLANGCI_CONFIG) ./...
+endif
 
 .PHONY: test
 test:
@@ -87,14 +99,17 @@ compose-clean:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  lint            Run golangci-lint"
-	@echo "  test            Run tests"
-	@echo "  build           Build the project"
-	@echo "  run             Run the project"
-	@echo "  clean           Remove build artifacts"
-	@echo "  migrate-up      Run goose up"
-	@echo "  migrate-down    Run goose down"
-	@echo "  compose-up      Run docker-compose up"
-	@echo "  compose-down    Run docker-compose down"
-	@echo "  compose-clean   Run docker-compose down -v"
-	@echo "  help            Show this help message"
+	@echo "  lint                    Run golangci-lint with normal checks and compare changes against master branch."
+	@echo "  lint strict             Same as 'lint', but with more strict checks."
+	@echo "  lint-full               Run golangci-lint with normal checks for all files in the repository."
+	@echo "  lint-full strict        Same as 'lint-full', but with more strict checks."
+	@echo "  test                    Run tests"
+	@echo "  build                   Build the project"
+	@echo "  run                     Run the project"
+	@echo "  clean                   Remove build artifacts"
+	@echo "  migrate-up              Run goose up"
+	@echo "  migrate-down            Run goose down"
+	@echo "  compose-up              Run docker-compose up"
+	@echo "  compose-down            Run docker-compose down"
+	@echo "  compose-clean           Run docker-compose down -v"
+	@echo "  help                    Show this help message"

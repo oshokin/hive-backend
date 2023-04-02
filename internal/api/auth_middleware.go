@@ -1,3 +1,4 @@
+// Package api provides HTTP handlers and utilities for a web API.
 package api
 
 import (
@@ -12,6 +13,7 @@ import (
 )
 
 type (
+	// UserClaims contains JWT claims for a user.
 	UserClaims struct {
 		UserID int64 `json:"user_id"`
 		jwt.RegisteredClaims
@@ -117,7 +119,7 @@ func (s *server) verifyAccessToken(tokenString string) (*UserClaims, error) {
 			return s.jwtSecretKey, nil
 		})
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse access token: %v", err)
+		return nil, fmt.Errorf("failed to parse access token: %w", err)
 	}
 
 	claims, ok := token.Claims.(*UserClaims)
@@ -134,7 +136,7 @@ func (s *server) verifyRefreshToken(tokenString string) (*UserClaims, error) {
 			return s.jwtSecretKey, nil
 		})
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse refresh token: %v", err)
+		return nil, fmt.Errorf("failed to parse refresh token: %w", err)
 	}
 
 	claims, ok := token.Claims.(*UserClaims)

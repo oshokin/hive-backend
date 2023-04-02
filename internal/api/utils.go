@@ -13,6 +13,8 @@ type apiError struct {
 	Message string `json:"message"`
 }
 
+const clientErrorsClass = 4
+
 func (s *server) renderError(w http.ResponseWriter, r *http.Request, err *common.Error) {
 	var (
 		errType    = err.Type
@@ -22,7 +24,7 @@ func (s *server) renderError(w http.ResponseWriter, r *http.Request, err *common
 		ctx        = r.Context()
 	)
 
-	if errClass == 4 {
+	if errClass == clientErrorsClass {
 		logger.Warn(ctx, errMessage)
 	} else {
 		logger.Error(ctx, errMessage)

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	user_service "github.com/oshokin/hive-backend/internal/service/user"
 )
 
+// User represents a user entity returned by the API.
 type User struct {
 	ID        int64  `json:"id"`
 	Email     string `json:"email"`
@@ -29,15 +31,16 @@ func (s *server) getUserHandler(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r,
 			common.NewError(common.ErrStatusBadRequest,
 				fmt.Errorf("failed to parse user ID: %w", err)))
+
 		return
 	}
 
 	user, err := s.userService.GetByID(r.Context(), userID)
 	if err != nil {
-		switch v := err.(type) {
-		case *common.Error:
-			s.renderError(w, r, v)
-		default:
+		var e *common.Error
+		if errors.As(err, &e) {
+			s.renderError(w, r, e)
+		} else {
 			s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
 				fmt.Errorf("failed to get user info: %w", err)))
 		}

@@ -60,5 +60,6 @@ func WithFields(ctx context.Context, fields ...zap.Field) context.Context {
 		Desugar().
 		With(fields...).
 		Sugar()
+
 	return ToContext(ctx, log)
 }

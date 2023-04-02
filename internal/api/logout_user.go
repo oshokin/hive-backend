@@ -13,6 +13,7 @@ type logoutUserResponse struct {
 
 func (s *server) logoutUserHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	userID := ctx.Value(userIDHeader)
 	if userID == 0 {
 		s.renderError(w, r, errAccessDenied)
@@ -26,10 +27,12 @@ func (s *server) logoutUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refreshToken := refreshTokenCookie.Value
+
 	claims, err := s.verifyRefreshToken(refreshToken)
 	if err != nil {
 		s.cache.Delete(refreshToken)
 		s.renderError(w, r, common.NewError(common.ErrStatusUnauthorized, err))
+
 		return
 	}
 

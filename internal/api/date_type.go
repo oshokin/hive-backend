@@ -10,12 +10,14 @@ type dateOnly time.Time
 
 func (d *dateOnly) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
+
 	t, err := time.Parse(time.DateOnly, s)
 	if err != nil {
 		return err
 	}
 
 	*d = dateOnly(t)
+
 	return nil
 }
 

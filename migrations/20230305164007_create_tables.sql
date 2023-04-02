@@ -6,6 +6,14 @@ CREATE TYPE gender_type AS enum (
     'UNKNOWN'
 );
 
+CREATE TYPE job_status AS enum (
+    'QUEUED',
+    'PROCESSING',
+    'CANCELLED',
+    'COMPLETED',
+    'FAILED'
+);
+
 CREATE TABLE cities (
     id smallserial PRIMARY KEY,
     name varchar(100) NOT NULL UNIQUE
@@ -49,12 +57,42 @@ COMMENT ON COLUMN users.gender IS 'Пол';
 
 COMMENT ON COLUMN users.interests IS 'Интересы';
 
+CREATE TABLE randomizing_jobs (
+    id serial PRIMARY KEY, -- ID задания, генерируется автоматически
+    expected_count bigint NOT NULL, -- Количество добавляемых анкет
+    current_count bigint NOT NULL DEFAULT 0, -- Количество уже добавленных анкет
+    status job_status NOT NULL DEFAULT 'QUEUED', -- Статус задания
+    started_at timestamp DEFAULT NULL, -- Дата / время начала задания
+    finished_at timestamp DEFAULT NULL, -- Дата / время окончания задания
+    error_message varchar(500) NOT NULL DEFAULT '' -- Текст ошибки, если задание завершилось с ошибкой
+);
+
+COMMENT ON TABLE randomizing_jobs IS 'Список заданий на заполнение анкет пользователей';
+
+COMMENT ON COLUMN randomizing_jobs.id IS 'ID задания, генерируется автоматически';
+
+COMMENT ON COLUMN randomizing_jobs.expected_count IS 'Количество добавляемых анкет';
+
+COMMENT ON COLUMN randomizing_jobs.current_count IS 'Количество уже добавленных анкет';
+
+COMMENT ON COLUMN randomizing_jobs.status IS 'Статус задания';
+
+COMMENT ON COLUMN randomizing_jobs.started_at IS 'Дата / время начала задания';
+
+COMMENT ON COLUMN randomizing_jobs.finished_at IS 'Дата / время окончания задания';
+
+COMMENT ON COLUMN randomizing_jobs.error_message IS 'Текст ошибки, если задание завершилось с ошибкой';
+
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE randomizing_jobs;
+
 DROP TABLE users;
 
 DROP TABLE cities;
+
+DROP TYPE job_status;
 
 DROP TYPE gender_type;
 

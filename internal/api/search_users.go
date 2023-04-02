@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,19 +11,10 @@ import (
 	user_service "github.com/oshokin/hive-backend/internal/service/user"
 )
 
-type (
-	searchUsersRequest struct {
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Limit     uint64 `json:"limit"`
-		Cursor    int64  `json:"cursor"`
-	}
-
-	searchUsersResponse struct {
-		Items   []*User `json:"items"`
-		HasNext bool    `json:"has_next"`
-	}
-)
+type searchUsersResponse struct {
+	Items   []*User `json:"items"`
+	HasNext bool    `json:"has_next"`
+}
 
 func (s *server) searchUsersHandler(w http.ResponseWriter, r *http.Request) {
 	var (
@@ -42,10 +34,10 @@ func (s *server) searchUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := s.userService.SearchByNamePrefixes(ctx, serviceRequest)
 	if err != nil {
-		switch v := err.(type) {
-		case *common.Error:
-			s.renderError(w, r, v)
-		default:
+		var e *common.Error
+		if errors.As(err, &e) {
+			s.renderError(w, r, e)
+		} else {
 			s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
 				fmt.Errorf("failed to search users: %w", err)))
 		}
@@ -58,8 +50,17 @@ func (s *server) searchUsersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) fillSearchUsersResponse(res *user_service.SearchByNamePrefixesResponse) *searchUsersResponse {
+	if res == nil {
+		return nil
+	}
+
 	items := make([]*User, 0, len(res.Items))
+
 	for _, v := range res.Items {
+		if v == nil {
+			continue
+		}
+
 		items = append(items, s.getUserModel(v))
 	}
 

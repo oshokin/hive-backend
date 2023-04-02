@@ -4,18 +4,35 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
+	"time"
 
+	gofakeit "github.com/brianvoe/gofakeit/v6"
 	user_repo "github.com/oshokin/hive-backend/internal/repository/user"
 	city_service "github.com/oshokin/hive-backend/internal/service/city"
 	"github.com/oshokin/hive-backend/internal/service/common"
+	rus_name_gen "github.com/oshokin/russian-name-generator"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type (
+	// Service defines the methods to manage users.
 	Service interface {
-		Add(ctx context.Context, u *User) (int64, error)
+		// Create a user with given user data.
+		Create(ctx context.Context, u *User) (int64, error)
+		// Create a batch of users with given user data.
+		// Returns the number of created users, a map of user validation errors (if any),
+		// and any error that occurred.
+		CreateBatch(ctx context.Context, sourceList []*User) (int64, map[*User]error, error)
+		// Generate random user data and create users with it.
+		GenerateRandomData(ctx context.Context, count int64) ([]*User, error)
+		// Get a user by ID.
 		GetByID(ctx context.Context, id int64) (*User, error)
+		// Get a user's ID by their login credentials.
 		GetIDByLoginCredentials(ctx context.Context, creds *LoginCredentials) (int64, error)
+		// Search for users by name prefixes.
 		SearchByNamePrefixes(ctx context.Context, req *SearchByNamePrefixesRequest) (*SearchByNamePrefixesResponse, error)
 	}
 
@@ -23,6 +40,11 @@ type (
 		userRepository user_repo.Repository
 		cityService    city_service.Service
 	}
+)
+
+const (
+	minAgeOfRandomUser = 10
+	maxAgeOfRandomUser = 75
 )
 
 var (
@@ -36,20 +58,23 @@ var (
 		errors.New("invalid email or password"))
 )
 
-func NewService(r user_repo.Repository, c city_service.Service) *service {
+// NewService returns a new instance of the user service.
+func NewService(r user_repo.Repository, c city_service.Service) Service {
 	return &service{
 		userRepository: r,
 		cityService:    c,
 	}
 }
 
-func (s *service) Add(ctx context.Context, u *User) (int64, error) {
+func (s *service) Create(ctx context.Context, u *User) (int64, error) {
 	email := u.Email
+
 	if err := u.validate(); err != nil {
 		return 0, common.NewError(common.ErrStatusBadRequest, err)
 	}
 
 	cityID := u.CityID
+
 	city, err := s.cityService.GetByID(ctx, cityID)
 	if err != nil {
 		return 0, common.NewError(common.ErrStatusInternalError,
@@ -76,24 +101,107 @@ func (s *service) Add(ctx context.Context, u *User) (int64, error) {
 		return 0, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	repoUser := &user_repo.User{
-		Email:        u.Email,
-		PasswordHash: string(passwordHash),
-		CityID:       u.CityID,
-		FirstName:    u.FirstName,
-		LastName:     u.LastName,
-		Birthdate:    u.Birthdate,
-		Gender:       string(u.Gender),
-		Interests:    u.Interests,
-	}
+	u.PasswordHash = string(passwordHash)
 
-	userID, err := s.userRepository.Add(ctx, repoUser)
+	userID, err := s.userRepository.Create(ctx, s.getRepoModel(u))
 	if err != nil {
 		return 0, common.NewError(common.ErrStatusInternalError,
 			fmt.Errorf("failed to create user: %w", err))
 	}
 
 	return userID, nil
+}
+
+func (s *service) CreateBatch(ctx context.Context, sourceList []*User) (int64, map[*User]error, error) {
+	validList, validationErrors, err := s.validateBatch(ctx, sourceList)
+	if err != nil {
+		return 0, nil, common.NewError(common.ErrStatusBadRequest, err)
+	}
+
+	if len(validList) == 0 {
+		return 0, nil, nil
+	}
+
+	createdCount, err := s.userRepository.CreateBatch(ctx, s.getRepoModels(validList))
+	if err != nil {
+		return 0, nil, common.NewError(common.ErrStatusInternalError,
+			fmt.Errorf("failed to create users: %w", err))
+	}
+
+	return createdCount, validationErrors, nil
+}
+
+func (s *service) GenerateRandomData(ctx context.Context, count int64) ([]*User, error) {
+	cities, err := s.cityService.GetAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cities: %w", err)
+	}
+
+	var (
+		personFields = &rus_name_gen.PersonFields{
+			Name:    true,
+			Surname: true,
+			Gender:  rus_name_gen.GenderAny,
+		}
+	)
+
+	const maxEmptyIterationsCount = 100
+
+	var (
+		now                  = time.Now()
+		end                  = now.AddDate(-minAgeOfRandomUser, 0, 0)
+		start                = end.AddDate(-maxAgeOfRandomUser, 0, 0)
+		usedEmails           = make(map[string]struct{}, count)
+		users                = make([]*User, 0, count)
+		idx                  int64
+		emptyIterationsCount int64
+	)
+
+	for {
+		if idx >= count || emptyIterationsCount >= maxEmptyIterationsCount {
+			break
+		}
+
+		var (
+			person = rus_name_gen.Person(personFields)
+			domain = domains[rand.Intn(len(domains))]
+			email  = strings.Join([]string{person.Name,
+				person.Surname,
+				strconv.FormatInt(time.Now().Unix(), 10),
+				"@",
+				domain}, "")
+		)
+
+		if _, ok := usedEmails[email]; ok {
+			emptyIterationsCount++
+			continue
+		}
+
+		usedEmails[email] = struct{}{}
+
+		var (
+			city      = cities[rand.Intn(len(cities))]
+			birthdate = gofakeit.DateRange(start, end)
+			gender    = GenderMale
+		)
+
+		if person.Gender.IsFeminine() {
+			gender = GenderFemale
+		}
+
+		users = append(users, &User{
+			Email:     email,
+			Password:  email,
+			CityID:    city.ID,
+			FirstName: person.Name,
+			LastName:  person.Surname,
+			Birthdate: birthdate,
+			Gender:    gender,
+			Interests: gofakeit.Hobby(),
+		})
+	}
+
+	return users, nil
 }
 
 func (s *service) GetByID(ctx context.Context, id int64) (*User, error) {
@@ -111,16 +219,7 @@ func (s *service) GetByID(ctx context.Context, id int64) (*User, error) {
 		return nil, errUserNotFound
 	}
 
-	return &User{
-		ID:        u.ID,
-		Email:     u.Email,
-		CityID:    u.CityID,
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
-		Birthdate: u.Birthdate,
-		Gender:    GenderType(u.Gender),
-		Interests: u.Interests,
-	}, nil
+	return s.getServiceModel(u), nil
 }
 
 func (s *service) GetIDByLoginCredentials(ctx context.Context, creds *LoginCredentials) (int64, error) {
@@ -151,7 +250,8 @@ func (s *service) GetIDByLoginCredentials(ctx context.Context, creds *LoginCrede
 	return loginData.ID, nil
 }
 
-func (s *service) SearchByNamePrefixes(ctx context.Context, r *SearchByNamePrefixesRequest) (*SearchByNamePrefixesResponse, error) {
+func (s *service) SearchByNamePrefixes(ctx context.Context,
+	r *SearchByNamePrefixesRequest) (*SearchByNamePrefixesResponse, error) {
 	if err := r.validate(); err != nil {
 		return nil, common.NewError(common.ErrStatusBadRequest, err)
 	}
@@ -173,7 +273,7 @@ func (s *service) SearchByNamePrefixes(ctx context.Context, r *SearchByNamePrefi
 	}
 
 	return &SearchByNamePrefixesResponse{
-		Items:   s.GetServiceModels(res.Items),
+		Items:   s.getServiceModels(res.Items),
 		HasNext: res.HasNext,
 	}, nil
 }
@@ -198,4 +298,95 @@ func (s *service) isPasswordCorrect(passwordHash, password string) (bool, error)
 	}
 
 	return false, err
+}
+
+func (s *service) validateBatch(ctx context.Context, sourceList []*User) ([]*User, map[*User]error, error) {
+	var (
+		validList        = make([]*User, 0, len(sourceList))
+		validationErrors = make(map[*User]error, len(sourceList))
+		emails           = make([]string, 0, len(sourceList))
+		repeatedEmails   = make(map[string]struct{}, len(sourceList))
+		cityIDs          = make([]int16, 0, len(sourceList))
+		repeatedCityIDs  = make(map[int16]struct{}, len(sourceList))
+	)
+
+	for _, u := range sourceList {
+		if u == nil {
+			continue
+		}
+
+		if err := u.validate(); err != nil {
+			validationErrors[u] = common.NewError(common.ErrStatusBadRequest, err)
+			continue
+		}
+
+		email := u.Email
+		if _, ok := repeatedEmails[email]; !ok {
+			emails = append(emails, email)
+			repeatedEmails[email] = struct{}{}
+		}
+
+		cityID := u.CityID
+		if _, ok := repeatedCityIDs[cityID]; !ok {
+			cityIDs = append(cityIDs, cityID)
+			repeatedCityIDs[cityID] = struct{}{}
+		}
+
+		validList = append(validList, u)
+	}
+
+	if len(validList) == 0 {
+		return validList, nil, nil
+	}
+
+	existingEmails, err := s.userRepository.CheckIfExistByEmails(ctx, emails)
+	if err != nil {
+		return nil, nil, common.NewError(common.ErrStatusInternalError,
+			fmt.Errorf("failed to check if users exist by email: %w", err))
+	}
+
+	existingCityIDs, err := s.cityService.CheckIfExistByIDs(ctx, cityIDs)
+	if err != nil {
+		return nil, nil, common.NewError(common.ErrStatusInternalError,
+			fmt.Errorf("failed to check if cities exist by ID: %w", err))
+	}
+
+	var i int
+
+	for _, u := range validList {
+		email := u.Email
+		if _, ok := existingEmails[email]; !ok {
+			validationErrors[u] = errEmailIsAlreadyTaken
+			continue
+		}
+
+		cityID := u.CityID
+		if _, ok := existingCityIDs[cityID]; !ok {
+			validationErrors[u] = common.NewError(common.ErrStatusBadRequest,
+				fmt.Errorf("city with ID %d is not found", cityID))
+			continue
+		}
+
+		var passwordHash []byte
+
+		passwordHash, err = s.hashPassword(u.Password)
+		if err != nil {
+			validationErrors[u] = common.NewError(common.ErrStatusBadRequest,
+				fmt.Errorf("failed to hash password: %w", err))
+			continue
+		}
+
+		u.PasswordHash = string(passwordHash)
+
+		validList[i] = u
+		i++
+	}
+
+	for j := i; j < len(validList); j++ {
+		validList[j] = nil
+	}
+
+	validList = validList[:i]
+
+	return validList, validationErrors, nil
 }

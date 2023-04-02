@@ -10,6 +10,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Middleware is a struct that represents a middleware that collects metrics
+// about HTTP requests and their duration.
+// It contains a CounterVec to track the number of requests
+// and a HistogramVec to track the duration of requests in milliseconds.
+// The middleware registers these metrics with Prometheus.
 type Middleware struct {
 	requestsTotal   *prometheus.CounterVec
 	requestDuration *prometheus.HistogramVec
@@ -18,6 +23,10 @@ type Middleware struct {
 const (
 	requestsTotalName   = "requests_total"
 	requestDurationName = "response_time_seconds"
+
+	statusClientErr = 400
+	statusNotFound  = 404
+	statusError     = 500
 )
 
 var (
@@ -25,6 +34,8 @@ var (
 	httpRequestsLabels = []string{"method", "path", "status"}
 )
 
+// NewMiddleware creates a new Prometheus middleware handler that provides
+// request counting and duration metrics for a Go-Chi HTTP server.
 func NewMiddleware(serviceName string, buckets ...float64) func(next http.Handler) http.Handler {
 	if len(buckets) == 0 {
 		buckets = defaultBuckets
@@ -62,7 +73,7 @@ func (m *Middleware) handler(next http.Handler) http.Handler {
 			defer func() {
 				ctx := chi.RouteContext(r.Context())
 				routePattern := strings.Join(ctx.RoutePatterns, "")
-				routePattern = strings.Replace(routePattern, "/*/", "/", -1)
+				routePattern = strings.ReplaceAll(routePattern, "/*/", "/")
 				status := m.getStatusLabel(ww.Status())
 
 				m.requestsTotal.WithLabelValues(
@@ -74,7 +85,7 @@ func (m *Middleware) handler(next http.Handler) http.Handler {
 					routePattern,
 					r.Method,
 					status).
-					Observe(float64(time.Since(start).Seconds()))
+					Observe(time.Since(start).Seconds())
 			}()
 
 			next.ServeHTTP(ww, r)
@@ -83,11 +94,11 @@ func (m *Middleware) handler(next http.Handler) http.Handler {
 
 func (m *Middleware) getStatusLabel(status int) string {
 	switch {
-	case status >= 500:
+	case status >= statusError:
 		return "error"
-	case status == 404:
+	case status == statusNotFound:
 		return "not_found"
-	case status >= 400:
+	case status >= statusClientErr:
 		return "client_error"
 	default:
 		return "ok"

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -36,6 +37,7 @@ func (s *server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		s.renderError(w, r,
 			common.NewError(common.ErrStatusBadRequest,
 				fmt.Errorf("failed to decode request: %w", err)))
+
 		return
 	}
 
@@ -53,12 +55,12 @@ func (s *server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	)
 
-	userID, err := s.userService.Add(ctx, u)
+	userID, err := s.userService.Create(ctx, u)
 	if err != nil {
-		switch v := err.(type) {
-		case *common.Error:
-			s.renderError(w, r, v)
-		default:
+		var e *common.Error
+		if errors.As(err, &e) {
+			s.renderError(w, r, e)
+		} else {
 			s.renderError(w, r, common.NewError(common.ErrStatusInternalError,
 				fmt.Errorf("failed to register user: %w", err)))
 		}
