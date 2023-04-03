@@ -11,11 +11,12 @@ import (
 
 // Configuration represents the application configuration.
 type Configuration struct {
-	AppName      string                    // Name of the application.
-	LogLevel     string                    // Logging level of the application.
-	ServerPort   uint16                    // Port on which the application listens for requests.
-	JWTSecretKey []byte                    // Secret key used to sign and verify JSON Web Tokens.
-	DBConfig     *db.DatabaseConfiguration // Database configuration.
+	AppName          string                    // Name of the application.
+	LogLevel         string                    // Logging level of the application.
+	ServerPort       uint16                    // Port on which the application listens for requests.
+	JWTSecretKey     []byte                    // Secret key used to sign and verify JSON Web Tokens.
+	FakeUserPassword string                    // Password string used for generating random users.
+	DBConfig         *db.DatabaseConfiguration // Database configuration.
 }
 
 // Constants with default values used for initialization.
@@ -51,10 +52,11 @@ func GetDefaults() (*Configuration, error) {
 
 func getConfigFromEnvVars() *Configuration {
 	return &Configuration{
-		AppName:      defaultAppName,
-		LogLevel:     viper.GetString("LOG_LEVEL"),
-		ServerPort:   viper.GetUint16("SERVER_PORT"),
-		JWTSecretKey: []byte(viper.GetString("JWT_SECRET_KEY")),
+		AppName:          defaultAppName,
+		LogLevel:         viper.GetString("LOG_LEVEL"),
+		ServerPort:       viper.GetUint16("SERVER_PORT"),
+		JWTSecretKey:     []byte(viper.GetString("JWT_SECRET_KEY")),
+		FakeUserPassword: viper.GetString("FAKE_USER_PASSWORD"),
 		DBConfig: &db.DatabaseConfiguration{
 			Host:               viper.GetString("DB_HOST"),
 			Port:               viper.GetUint16("DB_PORT"),

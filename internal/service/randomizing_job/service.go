@@ -42,7 +42,7 @@ type (
 
 const (
 	defaultTimeout   = 5 * time.Second
-	batchPortionSize = 100
+	batchPortionSize = 10000
 )
 
 var (
@@ -266,12 +266,12 @@ func (s *service) runJob(ctx context.Context, job *RandomizingJob) error {
 }
 
 func (s *service) processJobBatch(ctx context.Context, job *RandomizingJob) error {
-	usersLeftToAdd := common.Min(batchPortionSize, job.ExpectedCount-job.CurrentCount)
+	usersToAddCount := common.Min(batchPortionSize, job.ExpectedCount-job.CurrentCount)
 	logger.InfoKV(ctx, "starting to add a new portion of users",
 		common.RandomizingJobIDTag, job.ID,
-		common.UsersLeftToAddTag, usersLeftToAdd)
+		common.UsersToAddCountTag, usersToAddCount)
 
-	if usersLeftToAdd <= 0 {
+	if usersToAddCount <= 0 {
 		return nil
 	}
 
@@ -280,14 +280,29 @@ func (s *service) processJobBatch(ctx context.Context, job *RandomizingJob) erro
 		return s.handleJobBatchProcessingError(ctx, job, fmt.Errorf("failed to update job status: %w", err))
 	}
 
-	users, err := s.userService.GenerateRandomData(ctx, usersLeftToAdd)
+	startTime := time.Now()
+
+	users, err := s.userService.GenerateRandomData(ctx, usersToAddCount)
 	if err != nil {
 		return s.handleJobBatchProcessingError(ctx, job, fmt.Errorf("failed to generate random user data: %w", err))
 	}
 
+	generationElapsedTime := time.Since(startTime)
+	savingStartTime := time.Now()
+
 	usersCount, validationErrors, err := s.userService.CreateBatch(ctx, users)
 	if err != nil {
 		return s.handleJobBatchProcessingError(ctx, job, fmt.Errorf("failed to fill data for new portion of users: %w", err))
+	}
+
+	var (
+		savingElapsedTime = time.Since(savingStartTime)
+		elapsedTime       = time.Since(startTime)
+		timePerUser       time.Duration
+	)
+
+	if usersCount != 0 {
+		timePerUser = elapsedTime / time.Duration(usersCount)
 	}
 
 	for u, err := range validationErrors {
@@ -302,9 +317,14 @@ func (s *service) processJobBatch(ctx context.Context, job *RandomizingJob) erro
 
 	logger.InfoKV(ctx, "added a new portion of users",
 		common.RandomizingJobIDTag, job.ID,
-		common.UsersLeftToAddTag, usersLeftToAdd,
+		common.CurrentCountTag, job.CurrentCount,
+		common.UsersToAddCountTag, usersToAddCount,
 		common.AddedUsersCountTag, usersCount,
-		common.CurrentCountTag, job.CurrentCount)
+		common.ElapsedTimeTag, elapsedTime,
+		common.GenerationElapsedTimeTag, generationElapsedTime,
+		common.SavingElapsedTimeTag, savingElapsedTime,
+		common.TimePerUserTag, timePerUser,
+	)
 
 	if err = s.randomizingJobRepository.Update(ctx, s.getRepoModel(job), currentCountUpdateFields); err != nil {
 		return s.handleJobBatchProcessingError(ctx, job, fmt.Errorf("failed to update current users count: %w", err))

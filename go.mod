@@ -8,7 +8,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.20.2
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.2
 	github.com/jackc/pgx/v5 v5.3.1
-	github.com/oshokin/russian-name-generator v1.1.1
+	github.com/oshokin/russian-name-generator v1.1.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.14.0
 	github.com/spf13/viper v1.15.0

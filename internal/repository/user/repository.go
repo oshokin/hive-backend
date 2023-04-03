@@ -65,6 +65,15 @@ const (
 	columnInterests    = "interests"
 )
 
+var insertRows = []string{columnEmail,
+	columnPasswordHash,
+	columnCityID,
+	columnFirstName,
+	columnLastName,
+	columnBirthdate,
+	columnGender,
+	columnInterests}
+
 // NewRepository creates a new Repository instance.
 func NewRepository(db *pgxpool.Pool) Repository {
 	return &repository{db: db}
@@ -130,14 +139,7 @@ func (r *repository) CheckIfExistsByEmail(ctx context.Context, email string) (bo
 
 func (r *repository) Create(ctx context.Context, u *User) (int64, error) {
 	sql, args, err := sq.Insert(tableName).
-		Columns(columnEmail,
-			columnPasswordHash,
-			columnCityID,
-			columnFirstName,
-			columnLastName,
-			columnBirthdate,
-			columnGender,
-			columnInterests).
+		Columns(insertRows...).
 		Values(u.Email, u.PasswordHash, u.CityID, u.FirstName, u.LastName, u.Birthdate, u.Gender, u.Interests).
 		Suffix(fmt.Sprintf("RETURNING \"%s\"", columnID)).
 		PlaceholderFormat(sq.Dollar).
@@ -161,41 +163,36 @@ func (r *repository) CreateBatch(ctx context.Context, users []*User) (int64, err
 		return 0, nil
 	}
 
-	builder := sq.Insert(tableName).
-		Columns(columnEmail,
-			columnPasswordHash,
-			columnCityID,
-			columnFirstName,
-			columnLastName,
-			columnBirthdate,
-			columnGender,
-			columnInterests).
-		PlaceholderFormat(sq.Dollar)
-
-	for _, user := range users {
-		builder = builder.Values(user.Email,
-			user.PasswordHash,
-			user.CityID,
-			user.FirstName,
-			user.LastName,
-			user.Birthdate,
-			user.Gender,
-			user.Interests)
-	}
-
-	sql, args, err := builder.
-		Suffix("ON CONFLICT DO NOTHING").
-		ToSql()
+	conn, err := r.db.Acquire(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to generate query: %w", err)
+		return 0, fmt.Errorf("failed to acquire connection: %w", err)
 	}
 
-	result, err := r.db.Exec(ctx, sql, args...)
+	defer conn.Release()
+
+	rowSrc := pgx.CopyFromSlice(len(users),
+		func(i int) ([]interface{}, error) {
+			user := users[i]
+			return []interface{}{
+				user.Email,
+				user.PasswordHash,
+				user.CityID,
+				user.FirstName,
+				user.LastName,
+				user.Birthdate,
+				user.Gender,
+				user.Interests}, nil
+		})
+
+	copyCount, err := r.db.CopyFrom(ctx,
+		pgx.Identifier{tableName},
+		insertRows,
+		rowSrc)
 	if err != nil {
 		return 0, fmt.Errorf("failed to execute query: %w", err)
 	}
 
-	return result.RowsAffected(), nil
+	return copyCount, nil
 }
 
 func (r *repository) GetByID(ctx context.Context, id int64) (*User, error) {

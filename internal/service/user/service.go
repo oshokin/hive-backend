@@ -37,8 +37,9 @@ type (
 	}
 
 	service struct {
-		userRepository user_repo.Repository
-		cityService    city_service.Service
+		userRepository   user_repo.Repository
+		cityService      city_service.Service
+		fakeUserPassword string
 	}
 )
 
@@ -59,10 +60,11 @@ var (
 )
 
 // NewService returns a new instance of the user service.
-func NewService(r user_repo.Repository, c city_service.Service) Service {
+func NewService(r user_repo.Repository, c city_service.Service, f string) Service {
 	return &service{
-		userRepository: r,
-		cityService:    c,
+		userRepository:   r,
+		cityService:      c,
+		fakeUserPassword: f,
 	}
 }
 
@@ -194,7 +196,7 @@ func (s *service) GenerateRandomData(ctx context.Context, count int64) ([]*User,
 
 		users = append(users, &User{
 			Email:     email,
-			Password:  email,
+			Password:  s.fakeUserPassword,
 			CityID:    city.ID,
 			FirstName: person.Name,
 			LastName:  person.Surname,
@@ -356,7 +358,18 @@ func (s *service) validateBatch(ctx context.Context, sourceList []*User) ([]*Use
 			fmt.Errorf("failed to check if cities exist by ID: %w", err))
 	}
 
-	var i int
+	var hashedBytes []byte
+
+	hashedBytes, err = s.hashPassword(s.fakeUserPassword)
+	if err != nil {
+		return nil, nil, common_service.NewError(common_service.ErrStatusInternalError,
+			fmt.Errorf("failed to hash password: %w", err))
+	}
+
+	var (
+		passwordHash = string(hashedBytes)
+		i            int
+	)
 
 	for _, u := range validList {
 		email := u.Email
@@ -372,16 +385,7 @@ func (s *service) validateBatch(ctx context.Context, sourceList []*User) ([]*Use
 			continue
 		}
 
-		var passwordHash []byte
-
-		passwordHash, err = s.hashPassword(u.Password)
-		if err != nil {
-			validationErrors[u] = common_service.NewError(common_service.ErrStatusBadRequest,
-				fmt.Errorf("failed to hash password: %w", err))
-			continue
-		}
-
-		u.PasswordHash = string(passwordHash)
+		u.PasswordHash = passwordHash
 
 		validList[i] = u
 		i++

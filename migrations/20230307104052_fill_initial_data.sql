@@ -6,8 +6,3 @@ ON CONFLICT (name)
     DO NOTHING;
 
 -- +goose StatementEnd
--- +goose Down
--- +goose StatementBegin
-DELETE FROM cities;
-
--- +goose StatementEnd

@@ -52,7 +52,7 @@ func NewApplication(ctx context.Context) (*Application, error) {
 	cityRepo := city_repo.NewRepository(dbPool)
 	cityService := city_service.NewService(cityRepo)
 	userRepo := user_repo.NewRepository(dbPool)
-	userService := user_service.NewService(userRepo, cityService)
+	userService := user_service.NewService(userRepo, cityService, config.FakeUserPassword)
 	randomizingJobRepo := randomizing_job_repo.NewRepository(dbPool)
 	randomizingJobService := randomizing_job_service.NewService(randomizingJobRepo, userService)
 	server := api.NewServer(userService,
