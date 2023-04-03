@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	pgx "github.com/jackc/pgx/v5"
@@ -46,8 +45,8 @@ func NewRepository(db *pgxpool.Pool) Repository {
 
 func (r *repository) Create(ctx context.Context, expectedCount int64) (int64, error) {
 	query, args, err := sq.Insert(tableName).
-		Columns(columnExpectedCount, columnStartedAt).
-		Values(expectedCount, time.Now()).
+		Columns(columnExpectedCount).
+		Values(expectedCount).
 		Suffix(fmt.Sprintf("RETURNING %s", columnID)).
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
@@ -198,6 +197,10 @@ func (r *repository) GetList(ctx context.Context,
 }
 
 func (r *repository) Update(ctx context.Context, job *RandomizingJob, fields *UpdateFields) error {
+	if fields == nil {
+		return nil
+	}
+
 	updateBuilder := sq.Update(tableName).
 		PlaceholderFormat(sq.Dollar).
 		Where(sq.Eq{columnID: job.ID})

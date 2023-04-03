@@ -12,7 +12,7 @@ import (
 
 type (
 	cancelRandomizingJobRequest struct {
-		JobID int64 `json:"job_id"`
+		ID int64 `json:"id"`
 	}
 
 	cancelRandomizingJobResponse struct {
@@ -38,7 +38,7 @@ func (s *server) cancelRandomizingJobHandler(w http.ResponseWriter, r *http.Requ
 		ctx = r.Context()
 	)
 
-	err = s.randomizingJobService.Cancel(ctx, req.JobID)
+	err = s.randomizingJobService.Cancel(ctx, req.ID)
 	if err != nil {
 		var e *common.Error
 		if errors.As(err, &e) {

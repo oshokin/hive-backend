@@ -1,6 +1,6 @@
 package common
 
-// Logger tags
+// Logger tags ...
 const (
 	AddedUsersCountTag            = "added_users_count"
 	CurrentCountTag               = "current_count"

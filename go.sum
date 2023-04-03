@@ -174,8 +174,8 @@ github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zk
 github.com/matttproud/golang_protobuf_extensions v1.0.4/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
-github.com/oshokin/russian-name-generator v1.1.0 h1:X6ChXi0IDwzJvT4764b8TzhzH73Z1lQ4F0scT+1UtWE=
-github.com/oshokin/russian-name-generator v1.1.0/go.mod h1:YkC4RIjQNgIvcV/8BjDptSswAufEEUPMeHgTvIJMiGg=
+github.com/oshokin/russian-name-generator v1.1.1 h1:ZTuumitJnIQsyx93LRwXnLoBiD1WrLVeY8LlIiCSnxo=
+github.com/oshokin/russian-name-generator v1.1.1/go.mod h1:YkC4RIjQNgIvcV/8BjDptSswAufEEUPMeHgTvIJMiGg=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/pelletier/go-toml/v2 v2.0.7 h1:muncTPStnKRos5dpVKULv2FVd4bMOhNePj9CjgDb8Us=

@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 
 	gofakeit "github.com/brianvoe/gofakeit/v6"
+	"github.com/oshokin/hive-backend/internal/common"
 	user_repo "github.com/oshokin/hive-backend/internal/repository/user"
 	city_service "github.com/oshokin/hive-backend/internal/service/city"
-	"github.com/oshokin/hive-backend/internal/service/common"
+	common_service "github.com/oshokin/hive-backend/internal/service/common"
 	rus_name_gen "github.com/oshokin/russian-name-generator"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -48,13 +48,13 @@ const (
 )
 
 var (
-	errEmailIsAlreadyTaken = common.NewError(common.ErrStatusConflict,
+	errEmailIsAlreadyTaken = common_service.NewError(common_service.ErrStatusConflict,
 		errors.New("email is already taken"))
-	errInvalidUserID = common.NewError(common.ErrStatusBadRequest,
+	errInvalidUserID = common_service.NewError(common_service.ErrStatusBadRequest,
 		errors.New("user ID must be greater than 0"))
-	errUserNotFound = common.NewError(common.ErrStatusNotFound,
+	errUserNotFound = common_service.NewError(common_service.ErrStatusNotFound,
 		errors.New("user not found"))
-	errInvalidCredentials = common.NewError(common.ErrStatusBadRequest,
+	errInvalidCredentials = common_service.NewError(common_service.ErrStatusBadRequest,
 		errors.New("invalid email or password"))
 )
 
@@ -70,25 +70,25 @@ func (s *service) Create(ctx context.Context, u *User) (int64, error) {
 	email := u.Email
 
 	if err := u.validate(); err != nil {
-		return 0, common.NewError(common.ErrStatusBadRequest, err)
+		return 0, common_service.NewError(common_service.ErrStatusBadRequest, err)
 	}
 
 	cityID := u.CityID
 
 	city, err := s.cityService.GetByID(ctx, cityID)
 	if err != nil {
-		return 0, common.NewError(common.ErrStatusInternalError,
+		return 0, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to check if city exists by ID: %w", err))
 	}
 
 	if city == nil {
-		return 0, common.NewError(common.ErrStatusBadRequest,
+		return 0, common_service.NewError(common_service.ErrStatusBadRequest,
 			fmt.Errorf("city with ID %d is not found", cityID))
 	}
 
 	userExists, err := s.userRepository.CheckIfExistsByEmail(ctx, email)
 	if err != nil {
-		return 0, common.NewError(common.ErrStatusInternalError,
+		return 0, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to check if user exists by e-mail: %w", err))
 	}
 
@@ -105,7 +105,7 @@ func (s *service) Create(ctx context.Context, u *User) (int64, error) {
 
 	userID, err := s.userRepository.Create(ctx, s.getRepoModel(u))
 	if err != nil {
-		return 0, common.NewError(common.ErrStatusInternalError,
+		return 0, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to create user: %w", err))
 	}
 
@@ -115,16 +115,16 @@ func (s *service) Create(ctx context.Context, u *User) (int64, error) {
 func (s *service) CreateBatch(ctx context.Context, sourceList []*User) (int64, map[*User]error, error) {
 	validList, validationErrors, err := s.validateBatch(ctx, sourceList)
 	if err != nil {
-		return 0, nil, common.NewError(common.ErrStatusBadRequest, err)
+		return 0, validationErrors, common_service.NewError(common_service.ErrStatusBadRequest, err)
 	}
 
 	if len(validList) == 0 {
-		return 0, nil, nil
+		return 0, validationErrors, nil
 	}
 
 	createdCount, err := s.userRepository.CreateBatch(ctx, s.getRepoModels(validList))
 	if err != nil {
-		return 0, nil, common.NewError(common.ErrStatusInternalError,
+		return 0, nil, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to create users: %w", err))
 	}
 
@@ -163,11 +163,15 @@ func (s *service) GenerateRandomData(ctx context.Context, count int64) ([]*User,
 		}
 
 		var (
-			person = rus_name_gen.Person(personFields)
-			domain = domains[rand.Intn(len(domains))]
-			email  = strings.Join([]string{person.Name,
-				person.Surname,
-				strconv.FormatInt(time.Now().Unix(), 10),
+			person    = rus_name_gen.Person(personFields)
+			birthdate = gofakeit.DateRange(start, end)
+			domain    = common.GetRandItemFromList(domains)
+			email     = strings.Join([]string{
+				rus_name_gen.Transliterate(strings.ToLower(person.Name)),
+				"-",
+				rus_name_gen.Transliterate(strings.ToLower(person.Surname)),
+				"-",
+				strconv.FormatInt(int64(birthdate.Year()), 10),
 				"@",
 				domain}, "")
 		)
@@ -180,9 +184,8 @@ func (s *service) GenerateRandomData(ctx context.Context, count int64) ([]*User,
 		usedEmails[email] = struct{}{}
 
 		var (
-			city      = cities[rand.Intn(len(cities))]
-			birthdate = gofakeit.DateRange(start, end)
-			gender    = GenderMale
+			city   = common.GetRandItemFromList(cities)
+			gender = GenderMale
 		)
 
 		if person.Gender.IsFeminine() {
@@ -199,6 +202,8 @@ func (s *service) GenerateRandomData(ctx context.Context, count int64) ([]*User,
 			Gender:    gender,
 			Interests: gofakeit.Hobby(),
 		})
+
+		idx++
 	}
 
 	return users, nil
@@ -211,7 +216,7 @@ func (s *service) GetByID(ctx context.Context, id int64) (*User, error) {
 
 	u, err := s.userRepository.GetByID(ctx, id)
 	if err != nil {
-		return nil, common.NewError(common.ErrStatusInternalError,
+		return nil, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to read user info: %w", err))
 	}
 
@@ -224,12 +229,12 @@ func (s *service) GetByID(ctx context.Context, id int64) (*User, error) {
 
 func (s *service) GetIDByLoginCredentials(ctx context.Context, creds *LoginCredentials) (int64, error) {
 	if err := creds.validate(); err != nil {
-		return 0, common.NewError(common.ErrStatusBadRequest, err)
+		return 0, common_service.NewError(common_service.ErrStatusBadRequest, err)
 	}
 
 	loginData, err := s.userRepository.GetLoginDataByEmail(ctx, creds.Email)
 	if err != nil {
-		return 0, common.NewError(common.ErrStatusInternalError,
+		return 0, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to read user info: %w", err))
 	}
 
@@ -239,7 +244,7 @@ func (s *service) GetIDByLoginCredentials(ctx context.Context, creds *LoginCrede
 
 	isPasswordCorrect, err := s.isPasswordCorrect(loginData.PasswordHash, creds.Password)
 	if err != nil {
-		return 0, common.NewError(common.ErrStatusInternalError,
+		return 0, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to check password: %w", err))
 	}
 
@@ -253,7 +258,7 @@ func (s *service) GetIDByLoginCredentials(ctx context.Context, creds *LoginCrede
 func (s *service) SearchByNamePrefixes(ctx context.Context,
 	r *SearchByNamePrefixesRequest) (*SearchByNamePrefixesResponse, error) {
 	if err := r.validate(); err != nil {
-		return nil, common.NewError(common.ErrStatusBadRequest, err)
+		return nil, common_service.NewError(common_service.ErrStatusBadRequest, err)
 	}
 
 	limit := r.Limit
@@ -316,7 +321,7 @@ func (s *service) validateBatch(ctx context.Context, sourceList []*User) ([]*Use
 		}
 
 		if err := u.validate(); err != nil {
-			validationErrors[u] = common.NewError(common.ErrStatusBadRequest, err)
+			validationErrors[u] = common_service.NewError(common_service.ErrStatusBadRequest, err)
 			continue
 		}
 
@@ -341,13 +346,13 @@ func (s *service) validateBatch(ctx context.Context, sourceList []*User) ([]*Use
 
 	existingEmails, err := s.userRepository.CheckIfExistByEmails(ctx, emails)
 	if err != nil {
-		return nil, nil, common.NewError(common.ErrStatusInternalError,
+		return nil, nil, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to check if users exist by email: %w", err))
 	}
 
 	existingCityIDs, err := s.cityService.CheckIfExistByIDs(ctx, cityIDs)
 	if err != nil {
-		return nil, nil, common.NewError(common.ErrStatusInternalError,
+		return nil, nil, common_service.NewError(common_service.ErrStatusInternalError,
 			fmt.Errorf("failed to check if cities exist by ID: %w", err))
 	}
 
@@ -355,14 +360,14 @@ func (s *service) validateBatch(ctx context.Context, sourceList []*User) ([]*Use
 
 	for _, u := range validList {
 		email := u.Email
-		if _, ok := existingEmails[email]; !ok {
+		if _, ok := existingEmails[email]; ok {
 			validationErrors[u] = errEmailIsAlreadyTaken
 			continue
 		}
 
 		cityID := u.CityID
 		if _, ok := existingCityIDs[cityID]; !ok {
-			validationErrors[u] = common.NewError(common.ErrStatusBadRequest,
+			validationErrors[u] = common_service.NewError(common_service.ErrStatusBadRequest,
 				fmt.Errorf("city with ID %d is not found", cityID))
 			continue
 		}
@@ -371,7 +376,7 @@ func (s *service) validateBatch(ctx context.Context, sourceList []*User) ([]*Use
 
 		passwordHash, err = s.hashPassword(u.Password)
 		if err != nil {
-			validationErrors[u] = common.NewError(common.ErrStatusBadRequest,
+			validationErrors[u] = common_service.NewError(common_service.ErrStatusBadRequest,
 				fmt.Errorf("failed to hash password: %w", err))
 			continue
 		}

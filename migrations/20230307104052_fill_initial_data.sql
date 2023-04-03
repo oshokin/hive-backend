@@ -8,6 +8,6 @@ ON CONFLICT (name)
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
-TRUNCATE TABLE cities;
+DELETE FROM cities;
 
 -- +goose StatementEnd
