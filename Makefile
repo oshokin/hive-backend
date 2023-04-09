@@ -19,7 +19,7 @@ GOLANGCI_STRICT_CONFIG:=.golangci-strict.yaml
 ifneq ($(wildcard $(GOLANGCI_BIN)),)
 GOLANGCI_BIN_VERSION:=$(shell $(GOLANGCI_BIN) --version)
 ifneq ($(GOLANGCI_BIN_VERSION),)
-GOLANGCI_BIN_VERSION_SHORT:=$(shell echo "$(GOLANGCI_BIN_VERSION)" | sed -E 's/.* version (.*) built from .* on .*/\1/g')
+GOLANGCI_BIN_VERSION_SHORT:=$(shell echo "$(GOLANGCI_BIN_VERSION)" | sed -E 's/.* version (.*) built .* from .*/\1/g')
 else
 GOLANGCI_BIN_VERSION_SHORT:=0
 endif
