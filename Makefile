@@ -86,15 +86,15 @@ migrate-down:
 
 .PHONY: compose-up
 compose-up:
-	@docker-compose up -d
+	@docker compose up -d
 
 .PHONY: compose-down
 compose-down:
-	@docker-compose down
+	@docker compose down
 
 .PHONY: compose-clean
 compose-clean:
-	@docker-compose down -v --rmi all
+	@docker compose down -v --rmi all
 
 .PHONY: help
 help:
