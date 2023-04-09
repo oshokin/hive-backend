@@ -21,6 +21,7 @@ type Middleware struct {
 }
 
 const (
+	httpLabel           = "http"
 	requestsTotalName   = "requests_total"
 	requestDurationName = "response_time_seconds"
 
@@ -31,7 +32,7 @@ const (
 
 var (
 	defaultBuckets     = []float64{0.001, 0.005, 0.015, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 3.5, 5}
-	httpRequestsLabels = []string{"method", "path", "status"}
+	httpRequestsLabels = []string{"type", "method", "path", "status"}
 )
 
 // NewMiddleware creates a new Prometheus middleware handler that provides
@@ -45,13 +46,13 @@ func NewMiddleware(serviceName string, buckets ...float64) func(next http.Handle
 		requestsTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name:        requestsTotalName,
-				Help:        "Tracks the number of HTTP requests.",
+				Help:        "Number of requests.",
 				ConstLabels: prometheus.Labels{"service": serviceName},
 			}, httpRequestsLabels),
 		requestDuration: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:        requestDurationName,
-				Help:        "Tracks the latencies for HTTP requests in milliseconds.",
+				Help:        "Latencies for requests in milliseconds.",
 				ConstLabels: prometheus.Labels{"service": serviceName},
 				Buckets:     buckets,
 			}, httpRequestsLabels),
@@ -77,13 +78,15 @@ func (m *Middleware) handler(next http.Handler) http.Handler {
 				status := m.getStatusLabel(ww.Status())
 
 				m.requestsTotal.WithLabelValues(
+					httpLabel,
 					r.Method,
 					routePattern,
 					status,
 				).Inc()
 				m.requestDuration.WithLabelValues(
-					routePattern,
+					httpLabel,
 					r.Method,
+					routePattern,
 					status).
 					Observe(time.Since(start).Seconds())
 			}()

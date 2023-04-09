@@ -15,7 +15,6 @@ GOLANGCI_TAG:=1.52.2
 GOLANGCI_CONFIG:=.golangci.yaml
 GOLANGCI_STRICT_CONFIG:=.golangci-strict.yaml
 
-# Check local bin version
 ifneq ($(wildcard $(GOLANGCI_BIN)),)
 GOLANGCI_BIN_VERSION:=$(shell $(GOLANGCI_BIN) --version)
 ifneq ($(GOLANGCI_BIN_VERSION),)
@@ -31,7 +30,7 @@ endif
 default: help
 
 .PHONY: install-lint
-install-lint: ## install golangci-lint binary
+install-lint:
 ifeq ($(wildcard $(GOLANGCI_BIN)),)
 	$(info Downloading golangci-lint v$(GOLANGCI_TAG))
 	GOBIN=$(LOCAL_BIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v$(GOLANGCI_TAG)

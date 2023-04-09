@@ -31,13 +31,28 @@ Hive-Backend is an educational social network application.
     ```
    or use `make compose-clean`.
 
-## Endpoints
+## API Endpoints
 
-- **GET** `/v1/city/list`: Get list of cities.
+- **GET** `/ping`: Check if the API is alive.
+- **GET** `/metrics`: Get Prometheus metrics about the API.
+
+### Cities
+
+- **GET** `/v1/city/list`: Get a list of all cities.
+
+### User Randomizing Jobs
+
+- **GET** `/v1/randomizing-job/list`: Get a list of all user randomizing jobs.
+- **POST** `/v1/randomizing-job/create`: Create a new user randomizing job.
+- **POST** `/v1/randomizing-job/cancel`: Cancel a user randomizing job.
+
+### Users
+
 - **POST** `/v1/user/create`: Create a new user.
-- **POST** `/v1/user/login`: Authenticate user and generate a JWT token.
-- **POST** `/v1/user/logout`: Logout user and invalidate the JWT token.
+- **POST** `/v1/user/login`: Authenticate a user and generate a JWT token.
+- **POST** `/v1/user/logout`: Logout a user and invalidate the JWT token.
 - **GET** `/v1/user/{id}`: Get a user by ID.
+- **GET** `/v1/user/search`: Search for users.
 
 ## Postman Collection
 

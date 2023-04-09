@@ -1,11 +1,98 @@
 {
     "info": {
-        "_postman_id": "b97dacfb-fbfb-4c88-851c-f4c42b97e13c",
+        "_postman_id": "11699a9d-76a8-44b5-95ff-077f325285fb",
         "name": "hive-backend",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_exporter_id": "6125745"
     },
     "item": [
+        {
+            "name": "add randomizing job",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"email\": \"shokinoleg@gmail.com\",\r\n    \"password\": \"hard-password\",\r\n    \"city_id\": 1,\r\n    \"first_name\": \"Oleg\",\r\n    \"last_name\": \"Shokin\",\r\n    \"birthdate\": \"1987-06-09\",\r\n    \"gender\": \"MALE\",\r\n    \"interests\": \"reading and swimming at the same time\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "localhost:8080/v1/user/create",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "v1",
+                        "user",
+                        "create"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "get list of randomizing jobs",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"email\": \"shokinoleg@gmail.com\",\r\n    \"password\": \"hard-password\",\r\n    \"city_id\": 1,\r\n    \"first_name\": \"Oleg\",\r\n    \"last_name\": \"Shokin\",\r\n    \"birthdate\": \"1987-06-09\",\r\n    \"gender\": \"MALE\",\r\n    \"interests\": \"reading and swimming at the same time\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "localhost:8080/v1/user/create",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "v1",
+                        "user",
+                        "create"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "cancel randomizing job",
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\r\n    \"email\": \"shokinoleg@gmail.com\",\r\n    \"password\": \"hard-password\",\r\n    \"city_id\": 1,\r\n    \"first_name\": \"Oleg\",\r\n    \"last_name\": \"Shokin\",\r\n    \"birthdate\": \"1987-06-09\",\r\n    \"gender\": \"MALE\",\r\n    \"interests\": \"reading and swimming at the same time\"\r\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "localhost:8080/v1/user/create",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "v1",
+                        "user",
+                        "create"
+                    ]
+                }
+            },
+            "response": []
+        },
         {
             "name": "get list of cities",
             "protocolProfileBehavior": {
@@ -134,6 +221,38 @@
         },
         {
             "name": "get user info by ID",
+            "protocolProfileBehavior": {
+                "disableBodyPruning": true
+            },
+            "request": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "localhost:8080/v1/user/1",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "v1",
+                        "user",
+                        "1"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "search user",
             "protocolProfileBehavior": {
                 "disableBodyPruning": true
             },

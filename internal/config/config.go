@@ -32,6 +32,7 @@ const (
 var (
 	errConfigIsEmpty                              = errors.New("configuration is empty")
 	errJWTKeyIsEmpty                              = errors.New("jwt secret key is empty")
+	errFakeUserPasswordIsEmpty                    = errors.New("fake user password is empty")
 	errDatabaseConnectionConfigurationIsIncorrect = errors.New("database connection configuration is incorrect")
 )
 
@@ -77,6 +78,10 @@ func (c *Configuration) Validate() error {
 
 	if len(c.JWTSecretKey) == 0 {
 		return errJWTKeyIsEmpty
+	}
+
+	if c.FakeUserPassword == "" {
+		return errFakeUserPasswordIsEmpty
 	}
 
 	dbConfig := c.DBConfig

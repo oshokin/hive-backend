@@ -2,9 +2,9 @@ version: '3'
 
 services:
   hive-backend-db:
-    image: postgres:15.2-alpine
+    image: postgres:alpine
     container_name: hive-backend-db
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: admin
       POSTGRES_DB: hive
@@ -29,7 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: hive-backend-app:latest
-    restart: always
+    restart: unless-stopped
     depends_on:
       hive-backend-db:
         condition: service_healthy
@@ -48,22 +48,44 @@ services:
       HIVE_BACKEND_DB_PASSWORD: hard-password
       HIVE_BACKEND_DB_MAX_CONNECTIONS: 10
       HIVE_BACKEND_DB_CONNECTION_LIFETIME: 1m
-      HIVE_BACKEND_PROMETHEUS_HOST: hive-backend-app
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/ping" ]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/ping"
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
     networks:
       - hive-backend-network
 
+  hive-backend-cadvisor:
+    container_name: hive-backend-cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    command: [ "--port=9100" ]
+    networks:
+      - hive-backend-network
+
   hive-backend-prometheus:
     container_name: hive-backend-prometheus
     image: prom/prometheus:latest
-    restart: always
-    # depends_on:
-    #   hive-backend-app:
-    #     condition: service_healthy
+    restart: unless-stopped
+    depends_on:
+      hive-backend-app:
+        condition: service_healthy
     ports:
       - "9090:9090"
     volumes:
@@ -72,14 +94,14 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-    # environment:
-    #   HIVE_BACKEND_PROMETHEUS_HOST: hive-backend-app
     healthcheck:
       test:
         [
           "CMD",
-          "curl",
-          "-f",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
           "http://localhost:9090/-/healthy"
         ]
       interval: 10s
@@ -91,7 +113,7 @@ services:
   hive-backend-grafana:
     container_name: hive-backend-grafana
     image: grafana/grafana:latest
-    restart: always
+    restart: unless-stopped
     depends_on:
       hive-backend-prometheus:
         condition: service_healthy
