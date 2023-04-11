@@ -59,7 +59,8 @@ func NewServer(userService user_service.Service,
 		chi_prometheus.NewMiddleware(config.AppName),
 		middleware.RequestID,
 		middleware.Recoverer,
-		middleware.Heartbeat("/ping"))
+		middleware.Heartbeat("/ping"),
+		middleware.Timeout(config.RequestTimeout))
 
 	r.Handle("/metrics", promhttp.Handler())
 	r.Get("/v1/city/list", s.getCitiesHandler)

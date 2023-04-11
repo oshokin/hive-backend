@@ -39,6 +39,7 @@ services:
     environment:
       HIVE_BACKEND_LOG_LEVEL: INFO
       HIVE_BACKEND_SERVER_PORT: 8080
+      HIVE_BACKEND_REQUEST_TIMEOUT: 5s
       HIVE_BACKEND_JWT_SECRET_KEY: lock-code-ends-with-42
       HIVE_BACKEND_FAKE_USER_PASSWORD: fixture-person
       HIVE_BACKEND_DB_HOST: hive-backend-db
@@ -68,13 +69,17 @@ services:
     container_name: hive-backend-cadvisor
     image: gcr.io/cadvisor/cadvisor:latest
     restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
     ports:
       - "9100:9100"
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:rw
+      - /var/run:/var/run:ro
       - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro # only for Linux
     command: [ "--port=9100" ]
     networks:
       - hive-backend-network
@@ -84,6 +89,8 @@ services:
     image: prom/prometheus:latest
     restart: unless-stopped
     depends_on:
+      hive-backend-cadvisor:
+        condition: service_started
       hive-backend-app:
         condition: service_healthy
     ports:

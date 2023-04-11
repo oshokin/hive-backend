@@ -14,6 +14,7 @@ type Configuration struct {
 	AppName          string                    // Name of the application.
 	LogLevel         string                    // Logging level of the application.
 	ServerPort       uint16                    // Port on which the application listens for requests.
+	RequestTimeout   time.Duration             // Maximum duration for a request to complete before timing out.
 	JWTSecretKey     []byte                    // Secret key used to sign and verify JSON Web Tokens.
 	FakeUserPassword string                    // Password string used for generating random users.
 	DBConfig         *db.DatabaseConfiguration // Database configuration.
@@ -24,6 +25,7 @@ const (
 	defaultAppName              = "hive-backend"
 	defaultEnvPrefix            = "HIVE_BACKEND"
 	defaultServerPort           = uint16(8080)
+	defaultRequestTimeout       = 5 * time.Second
 	defaultDBMaxConnections     = 10
 	defaultDBConnectionLifetime = 1 * time.Minute
 )
@@ -107,6 +109,10 @@ func (c *Configuration) enrichEmptyFieldsWithDefaults() {
 
 	if c.ServerPort == 0 {
 		c.ServerPort = defaultServerPort
+	}
+
+	if c.RequestTimeout == 0 {
+		c.RequestTimeout = defaultRequestTimeout
 	}
 
 	dbConfig := c.DBConfig

@@ -9,6 +9,7 @@ COPY ./migrations ./migrations
 
 ENV HIVE_BACKEND_LOG_LEVEL=INFO \
     HIVE_BACKEND_SERVER_PORT=8080 \
+    HIVE_BACKEND_REQUEST_TIMEOUT=5s \
     HIVE_BACKEND_JWT_SECRET_KEY=lock-code-ends-with-42 \
     HIVE_BACKEND_FAKE_USER_PASSWORD=fixture-person \
     HIVE_BACKEND_DB_HOST=hive-backend-db \
