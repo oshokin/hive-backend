@@ -69,6 +69,11 @@ services:
     container_name: hive-backend-cadvisor
     image: gcr.io/cadvisor/cadvisor:latest
     restart: unless-stopped
+    depends_on:
+      hive-backend-db:
+        condition: service_healthy
+      hive-backend-app:
+        condition: service_healthy
     privileged: true
     devices:
       - /dev/kmsg:/dev/kmsg
@@ -103,7 +108,7 @@ services:
     restart: unless-stopped
     depends_on:
       hive-backend-cadvisor:
-        condition: service_started
+        condition: service_healthy
       hive-backend-app:
         condition: service_healthy
     ports:
@@ -140,8 +145,21 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./configs/grafana_dashboard.json:/var/lib/grafana/dashboards/grafana_dashboard.json
-      - hive-backend-grafana-data:/var/lib/grafana
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/api/health"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - hive-backend-network
 
@@ -155,5 +173,3 @@ volumes:
     name: hive-backend-data
   hive-backend-prometheus-data:
     name: hive-backend-prometheus-data
-  hive-backend-grafana-data:
-    name: hive-backend-grafana-data

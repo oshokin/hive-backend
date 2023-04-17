@@ -1,41 +1,4 @@
 {
-    "__inputs": [
-        {
-            "name": "DS_PROMETHEUS",
-            "label": "Prometheus",
-            "description": "",
-            "type": "datasource",
-            "pluginId": "prometheus",
-            "pluginName": "Prometheus"
-        }
-    ],
-    "__elements": {},
-    "__requires": [
-        {
-            "type": "grafana",
-            "id": "grafana",
-            "name": "Grafana",
-            "version": "9.4.7"
-        },
-        {
-            "type": "datasource",
-            "id": "prometheus",
-            "name": "Prometheus",
-            "version": "1.0.0"
-        },
-        {
-            "type": "panel",
-            "id": "stat",
-            "name": "Stat",
-            "version": ""
-        },
-        {
-            "type": "panel",
-            "id": "timeseries",
-            "name": "Time series",
-            "version": ""
-        }
-    ],
     "annotations": {
         "list": [
             {
@@ -62,7 +25,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": null,
+    "id": 1,
     "links": [],
     "liveNow": false,
     "panels": [
@@ -79,7 +42,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "description": "",
                     "fieldConfig": {
@@ -143,7 +106,7 @@
                         {
                             "datasource": {
                                 "type": "prometheus",
-                                "uid": "${DS_PROMETHEUS}"
+                                "uid": "UTIaISP4k"
                             },
                             "editorMode": "code",
                             "expr": "up{job=\"app\"}",
@@ -158,7 +121,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "description": "",
                     "fieldConfig": {
@@ -222,7 +185,7 @@
                         {
                             "datasource": {
                                 "type": "prometheus",
-                                "uid": "${DS_PROMETHEUS}"
+                                "uid": "UTIaISP4k"
                             },
                             "editorMode": "code",
                             "exemplar": false,
@@ -239,7 +202,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "description": "",
                     "fieldConfig": {
@@ -321,7 +284,7 @@
                         {
                             "datasource": {
                                 "type": "prometheus",
-                                "uid": "${DS_PROMETHEUS}"
+                                "uid": "UTIaISP4k"
                             },
                             "editorMode": "code",
                             "expr": "sum(rate(requests_total{job=\"app\", type=\"http\", path!=\"\", path!=\"/metrics\"}[$__rate_interval])) by (method, path, status)",
@@ -337,7 +300,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "description": "",
                     "fieldConfig": {
@@ -419,7 +382,7 @@
                         {
                             "datasource": {
                                 "type": "prometheus",
-                                "uid": "${DS_PROMETHEUS}"
+                                "uid": "UTIaISP4k"
                             },
                             "editorMode": "code",
                             "expr": "sum(increase(requests_total{job=\"app\", type=\"http\", path!=\"\", path!=\"/metrics\", status!=\"ok\"}[$__rate_interval])) by (method, path, status)",
@@ -435,7 +398,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "description": "",
                     "fieldConfig": {
@@ -527,7 +490,7 @@
                         {
                             "datasource": {
                                 "type": "prometheus",
-                                "uid": "${DS_PROMETHEUS}"
+                                "uid": "UTIaISP4k"
                             },
                             "editorMode": "code",
                             "expr": "histogram_quantile(${quantile:raw}, sum(rate(response_time_seconds_bucket{job=\"app\", type=\"http\", path!=\"\", path!=\"/metrics\"}[$__rate_interval])) by (le, method, path, status))",
@@ -560,7 +523,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "fieldConfig": {
                 "defaults": {
@@ -643,7 +606,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "go_gc_duration_seconds{job=\"app\"}",
@@ -662,7 +625,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -746,7 +709,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "exemplar": false,
@@ -766,7 +729,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -847,7 +810,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "exemplar": false,
@@ -869,7 +832,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -950,7 +913,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(deriv(process_open_fds{job=\"app\"}[$__rate_interval]))",
@@ -970,7 +933,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -1013,8 +976,7 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green",
-                                "value": null
+                                "color": "green"
                             },
                             {
                                 "color": "red",
@@ -1051,7 +1013,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(go_goroutines{job=\"app\"})",
@@ -1071,7 +1033,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1113,8 +1075,7 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green",
-                                "value": null
+                                "color": "green"
                             },
                             {
                                 "color": "red",
@@ -1151,7 +1112,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(go_threads{job=\"app\"})",
@@ -1168,7 +1129,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -1249,7 +1210,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(go_memstats_alloc_bytes{job=\"app\"})",
@@ -1269,7 +1230,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -1350,7 +1311,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(deriv(go_memstats_alloc_bytes{job=\"app\"}[$__rate_interval]))",
@@ -1370,7 +1331,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1450,7 +1411,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(go_memstats_stack_inuse_bytes{job=\"app\"})",
@@ -1471,7 +1432,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -1552,7 +1513,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(deriv(go_memstats_stack_inuse_bytes{job=\"app\"}[$__rate_interval]))",
@@ -1572,7 +1533,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1652,7 +1613,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(go_memstats_heap_inuse_bytes{job=\"app\"})",
@@ -1672,7 +1633,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1752,7 +1713,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(deriv(go_memstats_heap_inuse_bytes{job=\"app\"}[$__rate_interval]))",
@@ -1773,7 +1734,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -1854,7 +1815,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(process_resident_memory_bytes{job=\"app\"})",
@@ -1874,7 +1835,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -1955,7 +1916,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(deriv(process_resident_memory_bytes{job=\"app\"}[$__rate_interval]))",
@@ -1975,7 +1936,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -2056,7 +2017,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(process_virtual_memory_bytes{job=\"app\"})",
@@ -2076,7 +2037,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -2157,7 +2118,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(deriv(process_virtual_memory_bytes{job=\"app\"}[$__rate_interval]))",
@@ -2177,7 +2138,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -2258,7 +2219,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(go_memstats_alloc_bytes_total{job=\"app\"}[$__rate_interval]))",
@@ -2291,7 +2252,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -2370,7 +2331,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(pgxpool_max_conns{job=\"app\"}) ",
@@ -2382,7 +2343,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(pgxpool_total_conns{job=\"app\"}) ",
@@ -2393,7 +2354,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(pgxpool_constructing_conns{job=\"app\"}) ",
@@ -2405,7 +2366,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(pgxpool_acquired_conns{job=\"app\"}) ",
@@ -2417,7 +2378,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(pgxpool_idle_conns{job=\"app\"}) ",
@@ -2433,7 +2394,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -2513,7 +2474,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(pgxpool_acquire_count{job=\"app\"}[$__rate_interval]))",
@@ -2525,7 +2486,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(pgxpool_canceled_acquire_count{job=\"app\"}[$__rate_interval]))",
@@ -2538,7 +2499,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(pgxpool_empty_acquire{job=\"app\"}[$__rate_interval]))",
@@ -2555,7 +2516,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "description": "",
             "fieldConfig": {
@@ -2635,7 +2596,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(pgxpool_new_conns_count{job=\"app\"}[$__rate_interval]))",
@@ -2647,7 +2608,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(deriv(pgxpool_acquired_conns{job=\"app\"}[$__rate_interval]))",
@@ -2660,7 +2621,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(pgxpool_max_idle_destroy_count{job=\"app\"}[$__rate_interval]))",
@@ -2673,7 +2634,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(pgxpool_max_lifetime_destroy_count{job=\"app\"}[$__rate_interval]))",
@@ -2690,7 +2651,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "UTIaISP4k"
             },
             "fieldConfig": {
                 "defaults": {
@@ -2769,7 +2730,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "${DS_PROMETHEUS}"
+                        "uid": "UTIaISP4k"
                     },
                     "editorMode": "code",
                     "expr": "sum(rate(pgxpool_acquire_duration_ns{job=\"app\"}[$__rate_interval])) / sum(rate(pgxpool_acquire_count{job=\"app\"}[$__rate_interval]))",
@@ -2786,7 +2747,10 @@
     "revision": 1,
     "schemaVersion": 38,
     "style": "dark",
-    "tags": [],
+    "tags": [
+        "go",
+        "pgxpool"
+    ],
     "templating": {
         "list": [
             {
@@ -2842,6 +2806,6 @@
     "timezone": "browser",
     "title": "Hive Backend",
     "uid": "JR7m6zPVz",
-    "version": 44,
+    "version": 1,
     "weekStart": "monday"
 }
