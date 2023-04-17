@@ -81,6 +81,19 @@ services:
       - /var/lib/docker:/var/lib/docker:ro
       - /cgroup:/cgroup:ro # only for Linux
     command: [ "--port=9100" ]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9100/healthz"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - hive-backend-network
 
