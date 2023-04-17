@@ -67,7 +67,7 @@ services:
 
   hive-backend-cadvisor:
     container_name: hive-backend-cadvisor
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.47.1
     restart: unless-stopped
     depends_on:
       hive-backend-db:
@@ -81,10 +81,11 @@ services:
       - "9100:9100"
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:ro
+      - /dev/disk:/dev/disk/:ro
+      - /proc:/rootfs/proc:ro
       - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
-      - /cgroup:/cgroup:ro # only for Linux
+      - /var/run:/var/run:ro
+      - /var/lib/docker/:/var/lib/docker:ro
     command: [ "--port=9100" ]
     healthcheck:
       test:
