@@ -387,12 +387,6 @@
                 "type": "prometheus",
                 "uid": "UTIaISP4k"
             },
-            "fieldConfig": {
-                "defaults": {
-                    "custom": {}
-                },
-                "overrides": []
-            },
             "fill": 1,
             "fillGradient": 0,
             "gridPos": {
@@ -423,7 +417,7 @@
                 "alertThreshold": true
             },
             "percentage": false,
-            "pluginVersion": "7.4.5",
+            "pluginVersion": "9.4.7",
             "pointradius": 2,
             "points": false,
             "renderer": "flot",
@@ -485,12 +479,6 @@
                 "type": "prometheus",
                 "uid": "UTIaISP4k"
             },
-            "fieldConfig": {
-                "defaults": {
-                    "custom": {}
-                },
-                "overrides": []
-            },
             "fill": 1,
             "fillGradient": 0,
             "gridPos": {
@@ -519,7 +507,7 @@
                 "alertThreshold": true
             },
             "percentage": false,
-            "pluginVersion": "7.4.5",
+            "pluginVersion": "9.4.7",
             "pointradius": 2,
             "points": false,
             "renderer": "flot",
@@ -605,14 +593,20 @@
             "fieldConfig": {
                 "defaults": {
                     "custom": {
-                        "filterable": false
+                        "align": "auto",
+                        "cellOptions": {
+                            "type": "auto"
+                        },
+                        "filterable": false,
+                        "inspect": false
                     },
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -673,10 +667,18 @@
             },
             "id": 17,
             "options": {
+                "footer": {
+                    "countRows": false,
+                    "fields": "",
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": false
+                },
                 "showHeader": true,
                 "sortBy": []
             },
-            "pluginVersion": "7.4.5",
+            "pluginVersion": "9.4.7",
             "targets": [
                 {
                     "datasource": {
@@ -804,13 +806,13 @@
         ]
     },
     "time": {
-        "from": "now-6h",
+        "from": "now-1h",
         "to": "now"
     },
     "timepicker": {},
     "timezone": "",
     "title": "Cadvisor",
     "uid": "pMEd7m0Mz",
-    "version": 1,
+    "version": 2,
     "weekStart": ""
 }
