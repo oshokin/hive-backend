@@ -2,7 +2,6 @@ package chi_prometheus
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -72,9 +71,7 @@ func (m *Middleware) handler(next http.Handler) http.Handler {
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
 			defer func() {
-				ctx := chi.RouteContext(r.Context())
-				routePattern := strings.Join(ctx.RoutePatterns, "")
-				routePattern = strings.ReplaceAll(routePattern, "/*/", "/")
+				routePattern := m.getRoutePattern(r)
 				status := m.getStatusLabel(ww.Status())
 
 				m.requestsTotal.WithLabelValues(
@@ -93,6 +90,25 @@ func (m *Middleware) handler(next http.Handler) http.Handler {
 
 			next.ServeHTTP(ww, r)
 		})
+}
+
+func (m *Middleware) getRoutePattern(r *http.Request) string {
+	rctx := chi.RouteContext(r.Context())
+	if pattern := rctx.RoutePattern(); pattern != "" {
+		return pattern
+	}
+
+	routePath := r.URL.Path
+	if r.URL.RawPath != "" {
+		routePath = r.URL.RawPath
+	}
+
+	tctx := chi.NewRouteContext()
+	if !rctx.Routes.Match(tctx, r.Method, routePath) {
+		return routePath
+	}
+
+	return tctx.RoutePattern()
 }
 
 func (m *Middleware) getStatusLabel(status int) string {
