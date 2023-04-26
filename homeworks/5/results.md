@@ -24,7 +24,7 @@ curl --location 'localhost:8080/v1/randomizing-job/create' \
 Добавлен метод **GET** `/v1/user/search` для поиска пользователей. 
 Пример запроса:
 ```
-curl --location 'localhost:8080/v1/user/search?first_name=%D0%9E%D0%BB%D0%B5%D0%B3&last_name=%D0%A8%D0%BE%D0%BA%D0%B8%D0%BD' \
+curl --location 'localhost:8080/v1/user/search?first_name=%D0%9E%D0%BB%D0%B5%D0%B3&last_name=%D0%A8%D0%BE%D0%BA%D0%B8%D0%BD&limit=1' \
 --data ''
 ```
 

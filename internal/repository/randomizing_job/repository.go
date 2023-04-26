@@ -104,11 +104,6 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*RandomizingJob, er
 
 func (r *repository) GetList(ctx context.Context,
 	req *GetListRequest) (*GetListResponse, error) {
-	limit := req.Limit
-	if limit == 0 || limit > maxLimit {
-		limit = maxLimit
-	}
-
 	sortByID := fmt.Sprintf("%s ASC", columnID)
 
 	selectQB := sq.StatementBuilder.
@@ -121,7 +116,7 @@ func (r *repository) GetList(ctx context.Context,
 			columnErrorMessage).
 		From(tableName).
 		OrderBy(sortByID).
-		Limit(limit).
+		Limit(req.Limit + 1).
 		PlaceholderFormat(sq.Dollar)
 	if req.Cursor != 0 {
 		selectQB = selectQB.Where(sq.Gt{columnID: req.Cursor})
@@ -136,33 +131,23 @@ func (r *repository) GetList(ctx context.Context,
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
 
-	statsQB := sq.StatementBuilder.
-		Select(fmt.Sprintf("COUNT(%s)", columnID)).
-		From(tableName).
-		Limit(req.Limit + 1).
-		PlaceholderFormat(sq.Dollar)
-	if req.Cursor != 0 {
-		statsQB = statsQB.Where(sq.Gt{columnID: req.Cursor})
-	}
-
-	if len(req.Status) > 0 {
-		statsQB = statsQB.Where(sq.Eq{columnStatus: req.Status})
-	}
-
-	statsQuery, statsArgs, err := statsQB.ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build stats query: %w", err)
-	}
-
 	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run select query: %w", err)
 	}
 	defer rows.Close()
 
-	var randomizingJobs []*RandomizingJob
+	var (
+		randomizingJobs []*RandomizingJob
+		hasNext         bool
+	)
 
 	for rows.Next() {
+		if uint64(len(randomizingJobs)) >= req.Limit {
+			hasNext = true
+			break
+		}
+
 		var job RandomizingJob
 
 		err = rows.Scan(&job.ID,
@@ -180,19 +165,9 @@ func (r *repository) GetList(ctx context.Context,
 		randomizingJobs = append(randomizingJobs, &job)
 	}
 
-	var (
-		countRow   = r.db.QueryRow(ctx, statsQuery, statsArgs...)
-		statsCount uint64
-	)
-
-	err = countRow.Scan(&statsCount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read stats query results: %w", err)
-	}
-
 	return &GetListResponse{
 		Items:   randomizingJobs,
-		HasNext: statsCount > uint64(len(randomizingJobs)),
+		HasNext: hasNext,
 	}, nil
 }
 

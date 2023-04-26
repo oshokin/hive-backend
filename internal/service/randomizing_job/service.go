@@ -186,6 +186,8 @@ func (s *service) start(ctx context.Context) {
 
 				s.deleteJobCancel(job.ID)
 			}
+
+			time.Sleep(defaultTimeout)
 		}
 	}
 }

@@ -196,7 +196,7 @@ func (r *repository) CreateBatch(ctx context.Context, users []*User) (int64, err
 }
 
 func (r *repository) GetByID(ctx context.Context, id int64) (*User, error) {
-	sql, args, err := r.selectDefaultUserFields().
+	sql, args, err := r.selectDefaultUserFields(1).
 		Where(sq.Eq{columnID: id}).
 		ToSql()
 	if err != nil {
@@ -207,7 +207,7 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*User, error) {
 }
 
 func (r *repository) GetByEmail(ctx context.Context, email string) (*User, error) {
-	sql, args, err := r.selectDefaultUserFields().
+	sql, args, err := r.selectDefaultUserFields(1).
 		Where(sq.Eq{columnEmail: email}).
 		ToSql()
 	if err != nil {
@@ -249,24 +249,13 @@ func (r *repository) SearchByNamePrefixes(ctx context.Context,
 	var (
 		firstName = strings.Join([]string{common.EscapeLike(req.FirstName), "%"}, "")
 		lastName  = strings.Join([]string{common.EscapeLike(req.LastName), "%"}, "")
+		sortByID  = fmt.Sprintf("%s ASC", columnID)
 	)
 
-	selectQB := sq.StatementBuilder.
-		Select(columnID,
-			columnEmail,
-			columnPasswordHash,
-			columnCityID,
-			columnFirstName,
-			columnLastName,
-			columnBirthdate,
-			columnGender,
-			columnInterests).
-		From(tableName).
+	selectQB := r.selectDefaultUserFields(req.Limit + 1).
 		Where(sq.Like{columnFirstName: firstName}).
 		Where(sq.Like{columnLastName: lastName}).
-		OrderBy(fmt.Sprintf("%s ASC", columnID)).
-		Limit(req.Limit).
-		PlaceholderFormat(sq.Dollar)
+		OrderBy(sortByID)
 
 	if req.Cursor != 0 {
 		selectQB = selectQB.Where(sq.Gt{columnID: req.Cursor})
@@ -277,32 +266,23 @@ func (r *repository) SearchByNamePrefixes(ctx context.Context,
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
 
-	statsQB := sq.StatementBuilder.
-		Select(fmt.Sprintf("COUNT(%s)", columnID)).
-		From(tableName).
-		Where(sq.Like{columnFirstName: firstName}).
-		Where(sq.Like{columnLastName: lastName}).
-		Limit(req.Limit + 1).
-		PlaceholderFormat(sq.Dollar)
-
-	if req.Cursor != 0 {
-		statsQB = statsQB.Where(sq.Gt{columnID: req.Cursor})
-	}
-
-	statsQuery, statsArgs, err := statsQB.ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build stats query: %w", err)
-	}
-
 	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run select query: %w", err)
 	}
 	defer rows.Close()
 
-	var users []*User
+	var (
+		users   []*User
+		hasNext bool
+	)
 
 	for rows.Next() {
+		if uint64(len(users)) >= req.Limit {
+			hasNext = true
+			break
+		}
+
 		var user User
 
 		err = rows.Scan(&user.ID,
@@ -322,23 +302,13 @@ func (r *repository) SearchByNamePrefixes(ctx context.Context,
 		users = append(users, &user)
 	}
 
-	var (
-		countRow   = r.db.QueryRow(ctx, statsQuery, statsArgs...)
-		statsCount uint64
-	)
-
-	err = countRow.Scan(&statsCount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read stats query results: %w", err)
-	}
-
 	return &SearchByNamePrefixesResponse{
 		Items:   users,
-		HasNext: statsCount > uint64(len(users)),
+		HasNext: hasNext,
 	}, nil
 }
 
-func (r *repository) selectDefaultUserFields() sq.SelectBuilder {
+func (r *repository) selectDefaultUserFields(limit uint64) sq.SelectBuilder {
 	return sq.Select(columnID,
 		columnEmail,
 		columnPasswordHash,
@@ -349,7 +319,7 @@ func (r *repository) selectDefaultUserFields() sq.SelectBuilder {
 		columnGender,
 		columnInterests).
 		From(tableName).
-		Limit(1).
+		Limit(limit).
 		PlaceholderFormat(sq.Dollar)
 }
 

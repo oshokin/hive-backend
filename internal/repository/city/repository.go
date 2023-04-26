@@ -147,7 +147,7 @@ func (r *repository) GetList(ctx context.Context,
 		Select(columnID, columnName).
 		From(tableName).
 		OrderBy(sortByName).
-		Limit(req.Limit).
+		Limit(req.Limit + 1).
 		PlaceholderFormat(sq.Dollar)
 	if req.Cursor != 0 {
 		selectQB = selectQB.Where(sq.Gt{columnID: req.Cursor})
@@ -157,27 +157,9 @@ func (r *repository) GetList(ctx context.Context,
 		selectQB = selectQB.Where(sq.Like{columnName: fmt.Sprintf("%%%s%%", req.Search)})
 	}
 
-	statsQB := sq.StatementBuilder.
-		Select(fmt.Sprintf("COUNT(%s)", columnID)).
-		From(tableName).
-		Limit(req.Limit + 1).
-		PlaceholderFormat(sq.Dollar)
-	if req.Cursor != 0 {
-		statsQB = statsQB.Where(sq.Gt{columnID: req.Cursor})
-	}
-
-	if req.Search != "" {
-		statsQB = statsQB.Where(sq.Like{columnName: fmt.Sprintf("%%%s%%", req.Search)})
-	}
-
 	selectQuery, selectArgs, err := selectQB.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build select query: %w", err)
-	}
-
-	statsQuery, statsArgs, err := statsQB.ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build stats query: %w", err)
 	}
 
 	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
@@ -186,9 +168,17 @@ func (r *repository) GetList(ctx context.Context,
 	}
 	defer rows.Close()
 
-	var cities []*City
+	var (
+		cities  []*City
+		hasNext bool
+	)
 
 	for rows.Next() {
+		if uint64(len(cities)) >= req.Limit {
+			hasNext = true
+			break
+		}
+
 		var city City
 
 		err = rows.Scan(&city.ID, &city.Name)
@@ -199,18 +189,8 @@ func (r *repository) GetList(ctx context.Context,
 		cities = append(cities, &city)
 	}
 
-	var (
-		countRow   = r.db.QueryRow(ctx, statsQuery, statsArgs...)
-		statsCount uint64
-	)
-
-	err = countRow.Scan(&statsCount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read stats query results: %w", err)
-	}
-
 	return &GetListResponse{
 		Items:   cities,
-		HasNext: statsCount > uint64(len(cities)),
+		HasNext: hasNext,
 	}, nil
 }
