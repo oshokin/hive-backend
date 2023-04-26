@@ -49,4 +49,4 @@ curl --location 'localhost:8080/v1/user/search?first_name=%D0%9E%D0%BB%D0%B5%D0%
 - объяснение почему индекс именно такой;
 
 **Результат**:\
-Отчет сохранен в файл report.md
+Отчет сохранен в файл [report.md](report.md)
