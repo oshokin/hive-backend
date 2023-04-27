@@ -14,6 +14,8 @@ GOLANGCI_BIN:=$(LOCAL_BIN)/golangci-lint
 GOLANGCI_TAG:=1.52.2
 GOLANGCI_CONFIG:=.golangci.yaml
 GOLANGCI_STRICT_CONFIG:=.golangci-strict.yaml
+GOOSE_BIN:=$(LOCAL_BIN)/goose
+GOOSE_TAG:=3.10.0
 K6_BIN:=$(LOCAL_BIN)/k6
 K6_TAG:=0.43.1
 
@@ -26,6 +28,18 @@ GOLANGCI_BIN_VERSION_SHORT:=0
 endif
 ifneq "$(GOLANGCI_TAG)" "$(word 1, $(sort $(GOLANGCI_TAG) $(GOLANGCI_BIN_VERSION_SHORT)))"
 GOLANGCI_BIN:=
+endif
+endif
+
+ifneq ($(wildcard $(GOOSE_BIN)),)
+GOOSE_BIN_VERSION:=$(shell $(GOOSE_BIN) --version)
+ifneq ($(GOOSE_BIN_VERSION),)
+GOOSE_BIN_VERSION_SHORT:=$(shell echo "$(GOOSE_BIN_VERSION)" | sed -E 's/goose version:v(.*)/\1/g')
+else
+GOOSE_BIN_VERSION_SHORT:=0
+endif
+ifneq "$(GOOSE_TAG)" "$(word 1, $(sort $(GOOSE_TAG) $(GOOSE_BIN_VERSION_SHORT)))"
+GOOSE_BIN:=
 endif
 endif
 
@@ -92,13 +106,22 @@ clean:
 	@mkdir -p $(LOCAL_BIN)
 	@rm -rf $(LOCAL_BIN)/$(APP)
 
+.PHONY: install-goose
+install-goose:
+ifeq ($(wildcard $(GOOSE_BIN)),)
+	$(info Downloading goose v$(GOOSE_TAG))
+	@mkdir -p $(LOCAL_BIN)
+	GOBIN=$(LOCAL_BIN) $ go install github.com/pressly/goose/v3/cmd/goose@v$(GOOSE_TAG)
+GOOSE_BIN:=$(LOCAL_BIN)/goose
+endif
+
 .PHONY: migrate-up
-migrate-up:
-	@goose -dir "$(MIGRATIONS)" postgres "host=$(PG_HOST) port=$(PG_PORT) user=$(PG_USER) password=$(PG_PASSWORD) dbname=$(PG_DATABASE) sslmode=disable" up
+migrate-up: install-goose
+	$(GOOSE_BIN) -dir "$(MIGRATIONS)" postgres "host=$(PG_HOST) port=$(PG_PORT) user=$(PG_USER) password=$(PG_PASSWORD) dbname=$(PG_DATABASE) sslmode=disable" up
 
 .PHONY: migrate-down
-migrate-down:
-	@goose -dir "$(MIGRATIONS)" postgres "host=$(PG_HOST) port=$(PG_PORT) user=$(PG_USER) password=$(PG_PASSWORD) dbname=$(PG_DATABASE) sslmode=disable" down
+migrate-down: install-goose
+	$(GOOSE_BIN) -dir "$(MIGRATIONS)" postgres "host=$(PG_HOST) port=$(PG_PORT) user=$(PG_USER) password=$(PG_PASSWORD) dbname=$(PG_DATABASE) sslmode=disable" down
 
 .PHONY: compose-up
 compose-up:
@@ -127,19 +150,20 @@ endif
 .PHONY: help
 help:
 	@echo "Available targets:"
+	@echo "  help                    Show this help message"
 	@echo "  install-lint            Download and install golangci-lint to $(LOCAL_BIN) directory if it's not already installed"
 	@echo "  lint                    Run golangci-lint with normal checks and compare changes against master branch."
 	@echo "  lint strict             Same as 'lint', but with more strict checks."
 	@echo "  lint-full               Run golangci-lint with normal checks for all files in the repository."
 	@echo "  lint-full strict        Same as 'lint-full', but with more strict checks."
 	@echo "  test                    Run unit tests"
-	@echo "  install-k6              Download and install k6 to $(LOCAL_BIN) directory if it's not already installed."
 	@echo "  build                   Build the $(APP) binary for $(OS)/$(ARCH)"
 	@echo "  run                     Run the $(APP) binary"
 	@echo "  clean                   Remove the $(APP) binary"
+	@echo "  install-goose           Download and install goose to $(LOCAL_BIN) directory if it's not already installed"
 	@echo "  migrate-up              Run goose up"
 	@echo "  migrate-down            Run goose down"
 	@echo "  compose-up              Run docker-compose up"
 	@echo "  compose-down            Run docker-compose down"
 	@echo "  compose-clean           Run docker-compose down -v"
-	@echo "  help                    Show this help message"
+	@echo "  install-k6              Download and install k6 to $(LOCAL_BIN) directory if it's not already installed."
