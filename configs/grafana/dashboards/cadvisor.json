@@ -26,7 +26,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 14282,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 5,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -145,10 +145,12 @@
             "type": "prometheus",
             "uid": "UTIaISP4k"
           },
-          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[5m])) by (name) *100",
+          "editorMode": "code",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[$__rate_interval])) by (name) * 100",
           "hide": false,
-          "interval": "",
+          "interval": "1m",
           "legendFormat": "{{name}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -381,6 +383,217 @@
     },
     {
       "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 26,
+      "panels": [],
+      "title": "Disk",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "UTIaISP4k"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 28,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "UTIaISP4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(container_fs_writes_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[$__rate_interval])) by (job, name)",
+          "interval": "1m",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Data written",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "UTIaISP4k"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "binBps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 29,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "UTIaISP4k"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(container_fs_reads_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[$__rate_interval])) by (job, name)",
+          "interval": "1m",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Data read",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
       "datasource": {
         "type": "prometheus",
         "uid": "UTIaISP4k"
@@ -389,7 +602,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 38
       },
       "id": 2,
       "panels": [],
@@ -467,7 +680,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 39
       },
       "id": 23,
       "options": {
@@ -494,10 +707,12 @@
             "type": "prometheus",
             "uid": "UTIaISP4k"
           },
-          "expr": "sum(rate(container_network_receive_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[5m])) by (name)",
+          "editorMode": "code",
+          "expr": "sum(rate(container_network_receive_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[$__rate_interval])) by (name)",
           "hide": false,
-          "interval": "",
+          "interval": "1m",
           "legendFormat": "{{name}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -566,7 +781,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 46
       },
       "id": 24,
       "options": {
@@ -593,9 +808,11 @@
             "type": "prometheus",
             "uid": "UTIaISP4k"
           },
-          "expr": "sum(rate(container_network_transmit_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[5m])) by (name)",
-          "interval": "",
+          "editorMode": "code",
+          "expr": "sum(rate(container_network_transmit_bytes_total{instance=~\"$host\",name=~\"$container\",name=~\".+\"}[$__rate_interval])) by (name)",
+          "interval": "1m",
           "legendFormat": "{{name}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -612,7 +829,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 53
       },
       "id": 19,
       "panels": [],
@@ -706,7 +923,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 54
       },
       "id": 17,
       "options": {
@@ -774,7 +991,7 @@
       "type": "table"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -856,6 +1073,6 @@
   "timezone": "",
   "title": "Cadvisor",
   "uid": "pMEd7m0Mz",
-  "version": 3,
+  "version": 2,
   "weekStart": ""
 }
