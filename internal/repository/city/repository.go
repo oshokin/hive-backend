@@ -7,7 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	pgx "github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oshokin/hive-backend/internal/db"
 )
 
 type (
@@ -29,7 +29,7 @@ type (
 	}
 
 	repository struct {
-		db *pgxpool.Pool
+		cluster *db.Cluster
 	}
 )
 
@@ -39,9 +39,11 @@ const (
 	columnName = "name"
 )
 
-// NewRepository creates a new Repository instance with the given database connection pool.
-func NewRepository(db *pgxpool.Pool) Repository {
-	return &repository{db: db}
+// NewRepository creates a new Repository instance with the given database cluster.
+func NewRepository(cluster *db.Cluster) Repository {
+	return &repository{
+		cluster: cluster,
+	}
 }
 
 func (r *repository) CheckIfExistByIDs(ctx context.Context, cityIDs []int16) (map[int16]struct{}, error) {
@@ -56,7 +58,7 @@ func (r *repository) CheckIfExistByIDs(ctx context.Context, cityIDs []int16) (ma
 		return nil, fmt.Errorf("failed to build query: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
+	rows, err := r.cluster.ReadRR().Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run query: %w", err)
 	}
@@ -92,7 +94,7 @@ func (r *repository) GetAll(ctx context.Context) ([]*City, error) {
 		return nil, fmt.Errorf("failed to build query: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
+	rows, err := r.cluster.ReadRR().Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run query: %w", err)
 	}
@@ -127,7 +129,7 @@ func (r *repository) GetByID(ctx context.Context, id int16) (*City, error) {
 
 	var city City
 
-	err = r.db.QueryRow(ctx, query, args...).Scan(&city.ID, &city.Name)
+	err = r.cluster.ReadRR().QueryRow(ctx, query, args...).Scan(&city.ID, &city.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -162,7 +164,7 @@ func (r *repository) GetList(ctx context.Context,
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
+	rows, err := r.cluster.ReadRR().Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run select query: %w", err)
 	}

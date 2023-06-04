@@ -1,9 +1,7 @@
-version: '3'
-
 services:
-  hive-backend-db:
+  hive-backend-db-master:
     image: postgres:alpine
-    container_name: hive-backend-db
+    container_name: hive-backend-db-master
     restart: unless-stopped
     environment:
       POSTGRES_USER: admin
@@ -14,9 +12,103 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - hive-backend-data:/var/lib/postgresql/data
-    # uncomment this for debugging purposes only
-    # command: [ "postgres", "-c", "log_statement=all" ]
+      - ./configs/postgresql/master/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./configs/postgresql/master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./configs/postgresql/master/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - hive-backend-db-master-data:/var/lib/postgresql/data
+    command:
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        "-c",
+        "hba_file=/etc/postgresql/pg_hba.conf"
+          # uncomment this for debugging purposes only
+          # "-c",
+          # "log_statement=all"
+      ]
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "admin", "-d", "hive" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hive-backend-network
+
+  hive-backend-db-sync:
+    image: postgres:alpine
+    container_name: hive-backend-db-sync
+    restart: unless-stopped
+    depends_on:
+      hive-backend-db-master:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_DB: hive
+      POSTGRES_PASSWORD: hard-password
+      LC_CTYPE: ru_RU.UTF-8
+      LC_COLLATE: ru_RU.UTF-8
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./configs/postgresql/sync/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh
+      - ./configs/postgresql/sync/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./configs/postgresql/sync/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./configs/postgresql/sync/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./configs/postgresql/sync/standby.signal:/var/lib/postgresql/data/standby.signal
+      - ./data/db-sync:/var/lib/postgresql/data
+    command:
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        "-c",
+        "hba_file=/etc/postgresql/pg_hba.conf"
+          # uncomment this for debugging purposes only
+          # "-c",
+          # "log_statement=all"
+      ]
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "admin", "-d", "hive" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hive-backend-network
+
+  hive-backend-db-async:
+    image: postgres:alpine
+    container_name: hive-backend-db-async
+    restart: unless-stopped
+    depends_on:
+      hive-backend-db-master:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_DB: hive
+      POSTGRES_PASSWORD: hard-password
+      LC_CTYPE: ru_RU.UTF-8
+      LC_COLLATE: ru_RU.UTF-8
+    ports:
+      - "25432:5432"
+    volumes:
+      - ./configs/postgresql/async/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh
+      - ./configs/postgresql/async/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./configs/postgresql/async/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./configs/postgresql/async/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./configs/postgresql/async/standby.signal:/var/lib/postgresql/data/standby.signal
+      - ./data/db-async:/var/lib/postgresql/data
+    command:
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        "-c",
+        "hba_file=/etc/postgresql/pg_hba.conf"
+          # uncomment this for debugging purposes only
+          # "-c",
+          # "log_statement=all"
+      ]
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "admin", "-d", "hive" ]
       interval: 10s
@@ -33,7 +125,11 @@ services:
     image: hive-backend-app:latest
     restart: unless-stopped
     depends_on:
-      hive-backend-db:
+      hive-backend-db-master:
+        condition: service_healthy
+      hive-backend-db-sync:
+        condition: service_healthy
+      hive-backend-db-async:
         condition: service_healthy
     ports:
       # port values must match with value stored in "HIVE_BACKEND_SERVER_PORT"
@@ -44,13 +140,27 @@ services:
       HIVE_BACKEND_REQUEST_TIMEOUT: 30s
       HIVE_BACKEND_JWT_SECRET_KEY: lock-code-ends-with-42
       HIVE_BACKEND_FAKE_USER_PASSWORD: fixture-person
-      HIVE_BACKEND_DB_HOST: hive-backend-db
-      HIVE_BACKEND_DB_PORT: 5432
-      HIVE_BACKEND_DB_NAME: hive
-      HIVE_BACKEND_DB_USER: admin
-      HIVE_BACKEND_DB_PASSWORD: hard-password
-      HIVE_BACKEND_DB_MAX_CONNECTIONS: 100
-      HIVE_BACKEND_DB_CONNECTION_LIFETIME: 1m
+      HIVE_BACKEND_DB_MASTER_HOST: hive-backend-db-master
+      HIVE_BACKEND_DB_MASTER_PORT: 5432
+      HIVE_BACKEND_DB_MASTER_NAME: hive
+      HIVE_BACKEND_DB_MASTER_USER: admin
+      HIVE_BACKEND_DB_MASTER_PASSWORD: hard-password
+      HIVE_BACKEND_DB_MASTER_MAX_CONNECTIONS: 100
+      HIVE_BACKEND_DB_MASTER_CONNECTION_LIFETIME: 1m
+      HIVE_BACKEND_DB_SYNC_HOST: hive-backend-db-sync
+      HIVE_BACKEND_DB_SYNC_PORT: 5432
+      HIVE_BACKEND_DB_SYNC_NAME: hive
+      HIVE_BACKEND_DB_SYNC_USER: admin
+      HIVE_BACKEND_DB_SYNC_PASSWORD: hard-password
+      HIVE_BACKEND_DB_SYNC_MAX_CONNECTIONS: 100
+      HIVE_BACKEND_DB_SYNC_CONNECTION_LIFETIME: 1m
+      HIVE_BACKEND_DB_ASYNC_HOST: hive-backend-db-async
+      HIVE_BACKEND_DB_ASYNC_PORT: 5432
+      HIVE_BACKEND_DB_ASYNC_NAME: hive
+      HIVE_BACKEND_DB_ASYNC_USER: admin
+      HIVE_BACKEND_DB_ASYNC_PASSWORD: hard-password
+      HIVE_BACKEND_DB_ASYNC_MAX_CONNECTIONS: 100
+      HIVE_BACKEND_DB_ASYNC_CONNECTION_LIFETIME: 1m
     healthcheck:
       test:
         [
@@ -72,7 +182,7 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.47.1
     restart: unless-stopped
     depends_on:
-      hive-backend-db:
+      hive-backend-db-master:
         condition: service_healthy
       hive-backend-app:
         condition: service_healthy
@@ -188,7 +298,7 @@ networks:
     driver: bridge
 
 volumes:
-  hive-backend-data:
-    name: hive-backend-data
+  hive-backend-db-master-data:
+    name: hive-backend-db-master-data
   hive-backend-prometheus-data:
     name: hive-backend-prometheus-data

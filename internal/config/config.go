@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/oshokin/hive-backend/internal/db"
@@ -11,13 +12,13 @@ import (
 
 // Configuration represents the application configuration.
 type Configuration struct {
-	AppName          string                    // Name of the application.
-	LogLevel         string                    // Logging level of the application.
-	ServerPort       uint16                    // Port on which the application listens for requests.
-	RequestTimeout   time.Duration             // Maximum duration for a request to complete before timing out.
-	JWTSecretKey     []byte                    // Secret key used to sign and verify JSON Web Tokens.
-	FakeUserPassword string                    // Password string used for generating random users.
-	DBConfig         *db.DatabaseConfiguration // Database configuration.
+	AppName          string                   // Name of the application.
+	LogLevel         string                   // Logging level of the application.
+	ServerPort       uint16                   // Port on which the application listens for requests.
+	RequestTimeout   time.Duration            // Maximum duration for a request to complete before timing out.
+	JWTSecretKey     []byte                   // Secret key used to sign and verify JSON Web Tokens.
+	FakeUserPassword string                   // Password string used for generating random users.
+	DBClusterConfig  *db.ClusterConfiguration // Database cluster configuration.
 }
 
 // Constants with default values used for initialization.
@@ -26,16 +27,15 @@ const (
 	defaultEnvPrefix            = "HIVE_BACKEND"
 	defaultServerPort           = uint16(8080)
 	defaultRequestTimeout       = 5 * time.Second
-	defaultDBMaxConnections     = 10
+	defaultDBMaxConnections     = 100
 	defaultDBConnectionLifetime = 1 * time.Minute
 )
 
 // Errors that can occur during configuration validation.
 var (
-	errConfigIsEmpty                              = errors.New("configuration is empty")
-	errJWTKeyIsEmpty                              = errors.New("jwt secret key is empty")
-	errFakeUserPasswordIsEmpty                    = errors.New("fake user password is empty")
-	errDatabaseConnectionConfigurationIsIncorrect = errors.New("database connection configuration is incorrect")
+	errConfigIsEmpty           = errors.New("configuration is empty")
+	errJWTKeyIsEmpty           = errors.New("jwt secret key is empty")
+	errFakeUserPasswordIsEmpty = errors.New("fake user password is empty")
 )
 
 // GetDefaults loads configuration from environment variables and returns a pointer to Configuration.
@@ -60,19 +60,31 @@ func getConfigFromEnvVars() *Configuration {
 		ServerPort:       viper.GetUint16("SERVER_PORT"),
 		JWTSecretKey:     []byte(viper.GetString("JWT_SECRET_KEY")),
 		FakeUserPassword: viper.GetString("FAKE_USER_PASSWORD"),
-		DBConfig: &db.DatabaseConfiguration{
-			Host:               viper.GetString("DB_HOST"),
-			Port:               viper.GetUint16("DB_PORT"),
-			Name:               viper.GetString("DB_NAME"),
-			User:               viper.GetString("DB_USER"),
-			Password:           viper.GetString("DB_PASSWORD"),
-			MaxConnections:     viper.GetUint16("DB_MAX_CONNECTIONS"),
-			ConnectionLifetime: viper.GetDuration("DB_CONNECTION_LIFETIME"),
+		DBClusterConfig: &db.ClusterConfiguration{
+			Master: getDatabaseConfiguration("MASTER"),
+			Sync:   getDatabaseConfiguration("SYNC"),
+			Async:  getDatabaseConfiguration("ASYNC"),
 		},
 	}
 }
 
-// Validate checks if Configuration is valid.
+func getDatabaseConfiguration(prefix string) *db.DatabaseConfiguration {
+	addPrefix := func(key string) string {
+		return strings.Join([]string{"DB", prefix, key}, "_")
+	}
+
+	return &db.DatabaseConfiguration{
+		Host:               viper.GetString(addPrefix("HOST")),
+		Port:               viper.GetUint16(addPrefix("PORT")),
+		Name:               viper.GetString(addPrefix("NAME")),
+		User:               viper.GetString(addPrefix("USER")),
+		Password:           viper.GetString(addPrefix("PASSWORD")),
+		MaxConnections:     viper.GetUint16(addPrefix("MAX_CONNECTIONS")),
+		ConnectionLifetime: viper.GetDuration(addPrefix("CONNECTION_LIFETIME")),
+	}
+}
+
+// Validate checks if configuration is valid.
 func (c *Configuration) Validate() error {
 	if c == nil {
 		return errConfigIsEmpty
@@ -86,25 +98,21 @@ func (c *Configuration) Validate() error {
 		return errFakeUserPasswordIsEmpty
 	}
 
-	dbConfig := c.DBConfig
-	if dbConfig == nil {
-		return errDatabaseConnectionConfigurationIsIncorrect
+	dbc := c.DBClusterConfig
+	if err := dbc.Master.Validate("master"); err != nil {
+		return err
 	}
 
-	if dbConfig.Host == "" ||
-		dbConfig.Port == 0 ||
-		dbConfig.Name == "" ||
-		dbConfig.User == "" ||
-		dbConfig.Password == "" {
-		return errDatabaseConnectionConfigurationIsIncorrect
+	if err := dbc.Sync.Validate("sync"); err != nil {
+		return err
 	}
 
-	return nil
+	return dbc.Async.Validate("async")
 }
 
 func (c *Configuration) enrichEmptyFieldsWithDefaults() {
-	if c == nil {
-		return
+	if c.AppName == "" {
+		c.AppName = defaultAppName
 	}
 
 	if c.ServerPort == 0 {
@@ -115,16 +123,23 @@ func (c *Configuration) enrichEmptyFieldsWithDefaults() {
 		c.RequestTimeout = defaultRequestTimeout
 	}
 
-	dbConfig := c.DBConfig
-	if dbConfig == nil {
-		return
+	if dbc := c.DBClusterConfig; dbc != nil {
+		c.enrichEmptyDBConfig(dbc.Master)
+		c.enrichEmptyDBConfig(dbc.Sync)
+		c.enrichEmptyDBConfig(dbc.Async)
+	}
+}
+
+func (c *Configuration) enrichEmptyDBConfig(v *db.DatabaseConfiguration) {
+	if v == nil {
+		v = &db.DatabaseConfiguration{}
 	}
 
-	if dbConfig.MaxConnections == 0 {
-		dbConfig.MaxConnections = defaultDBMaxConnections
+	if v.MaxConnections == 0 {
+		v.MaxConnections = defaultDBMaxConnections
 	}
 
-	if dbConfig.ConnectionLifetime == 0 {
-		dbConfig.ConnectionLifetime = defaultDBConnectionLifetime
+	if v.ConnectionLifetime == 0 {
+		v.ConnectionLifetime = defaultDBConnectionLifetime
 	}
 }

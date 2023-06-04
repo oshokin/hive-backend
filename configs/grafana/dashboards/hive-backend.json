@@ -105,7 +105,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": {
@@ -113,7 +113,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "up{job=\"app\"}",
+          "expr": "up{job=\"$job\"}",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -211,7 +211,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(requests_total{job=\"app\", type=\"http\", path!=\"\", path!~\"/metrics|/ping\"}[$__rate_interval])) by (method, path, status)",
+          "expr": "sum(rate(requests_total{job=\"$job\", type=\"http\", path!=\"\", path!~\"/metrics|/ping\"}[$__rate_interval])) by (method, path, status)",
           "interval": "1m",
           "legendFormat": "{{method}} {{path}} | {{status}}",
           "range": true,
@@ -310,7 +310,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(increase(requests_total{job=\"app\", type=\"http\", path!=\"\", path!~\"/metrics|/ping\", status!=\"ok\"}[$__rate_interval])) by (method, path, status)",
+          "expr": "sum(increase(requests_total{job=\"$job\", type=\"http\", path!=\"\", path!~\"/metrics|/ping\", status!=\"ok\"}[$__rate_interval])) by (method, path, status)",
           "interval": "1m",
           "legendFormat": "{{method}} {{path}} | {{status}}",
           "range": true,
@@ -363,12 +363,12 @@
           },
           "decimals": 2,
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "green",
@@ -419,7 +419,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(${quantile:raw}, sum(rate(response_time_seconds_bucket{job=\"app\", type=\"http\", path!=\"\", path!~\"/metrics|/ping\"}[$__rate_interval])) by (le, method, path, status))",
+          "expr": "histogram_quantile(${quantile:raw}, sum(rate(response_time_seconds_bucket{job=\"$job\", type=\"http\", path!=\"\", path!~\"/metrics|/ping\"}[$__rate_interval])) by (le, method, path, status))",
           "interval": "1m",
           "legendFormat": "{{method}} {{path}} | {{status}}",
           "range": true,
@@ -458,8 +458,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -502,7 +501,7 @@
         "text": {},
         "textMode": "value"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": {
@@ -511,7 +510,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "go_memstats_last_gc_time_seconds{job=\"app\"} * 1000",
+          "expr": "go_memstats_last_gc_time_seconds{job=\"$job\"} * 1000",
           "instant": true,
           "legendFormat": "Last GC time",
           "range": false,
@@ -538,8 +537,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -582,7 +580,7 @@
         "text": {},
         "textMode": "value"
       },
-      "pluginVersion": "9.4.7",
+      "pluginVersion": "9.5.2",
       "targets": [
         {
           "datasource": {
@@ -591,7 +589,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "($__to - go_memstats_last_gc_time_seconds{job=\"app\"} * 1000)/1000",
+          "expr": "($__to - go_memstats_last_gc_time_seconds{job=\"$job\"} * 1000)/1000",
           "instant": true,
           "legendFormat": "Elapsed since last GC",
           "range": false,
@@ -647,8 +645,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -692,7 +689,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "increase(go_memstats_last_gc_time_seconds{job=\"app\"}[$__rate_interval])",
+          "expr": "increase(go_memstats_last_gc_time_seconds{job=\"$job\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
           "legendFormat": "TImeout",
@@ -794,7 +791,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "go_gc_duration_seconds{job=\"app\"}",
+          "expr": "go_gc_duration_seconds{job=\"$job\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{quantile}} q",
@@ -895,7 +892,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_mallocs_total{job=\"app\"} - go_memstats_frees_total{job=\"app\"})",
+          "expr": "sum(go_memstats_mallocs_total{job=\"$job\"} - go_memstats_frees_total{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Total",
@@ -995,7 +992,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(go_memstats_mallocs_total{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(go_memstats_mallocs_total{job=\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 1,
@@ -1095,7 +1092,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(go_memstats_alloc_bytes_total{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(go_memstats_alloc_bytes_total{job=\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Rate",
@@ -1193,7 +1190,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(go_threads{job=\"app\"})",
+          "expr": "sum(go_threads{job=\"$job\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1207,7 +1204,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_goroutines{job=\"app\"})",
+          "expr": "sum(go_goroutines{job=\"$job\"})",
           "hide": false,
           "legendFormat": "Goroutines count",
           "range": true,
@@ -1219,7 +1216,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_goroutines{job=\"app\"}) / sum(go_threads{job=\"app\"})",
+          "expr": "sum(go_goroutines{job=\"$job\"}) / sum(go_threads{job=\"$job\"})",
           "hide": false,
           "legendFormat": "Goroutines/thread",
           "range": true,
@@ -1320,7 +1317,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "increase(go_memstats_lookups_total{job=\"app\"}[$__rate_interval])",
+          "expr": "increase(go_memstats_lookups_total{job=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1422,7 +1419,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_stack_inuse_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_stack_inuse_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "In use",
@@ -1435,7 +1432,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_stack_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_stack_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Obtained from system",
@@ -1510,7 +1507,7 @@
         "x": 0,
         "y": 102
       },
-      "id": 12,
+      "id": 65,
       "options": {
         "legend": {
           "calcs": [
@@ -1534,7 +1531,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_heap_alloc_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_heap_alloc_bytes{job=\"$job\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1548,7 +1545,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_heap_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_heap_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Obtained from system",
@@ -1561,7 +1558,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "go_memstats_heap_idle_bytes{job=\"app\"}",
+          "expr": "go_memstats_heap_idle_bytes{job=\"$job\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Waiting to be used",
@@ -1574,7 +1571,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_heap_inuse_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_heap_inuse_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Are in use",
@@ -1587,7 +1584,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_heap_released_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_heap_released_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Released to system",
@@ -1595,7 +1592,7 @@
           "refId": "released to system"
         }
       ],
-      "title": "Heap memory 1",
+      "title": "Heap memory",
       "type": "timeseries"
     },
     {
@@ -1687,7 +1684,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_mspan_inuse_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_mspan_inuse_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "In use by mspan",
@@ -1700,7 +1697,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_mspan_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_mspan_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Used for mspan obtained from system",
@@ -1713,7 +1710,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_mcache_inuse_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_mcache_inuse_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "In use by mcache",
@@ -1726,7 +1723,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_mcache_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_mcache_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Used for mcache obtained from system",
@@ -1739,7 +1736,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_buck_hash_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_buck_hash_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Used by the profiling bucket hash table",
@@ -1752,7 +1749,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_gc_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_gc_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Used for GC system metadata",
@@ -1765,7 +1762,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_other_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_other_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Used for other system allocations",
@@ -1778,7 +1775,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_next_gc_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_next_gc_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "When next GC will take place",
@@ -1877,7 +1874,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(go_memstats_sys_bytes{job=\"app\"})",
+          "expr": "sum(go_memstats_sys_bytes{job=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Obtained from system",
@@ -1977,7 +1974,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(process_cpu_seconds_total{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(process_cpu_seconds_total{job=\"$job\"}[$__rate_interval]))",
           "interval": "1m",
           "legendFormat": "Rate",
           "range": true,
@@ -2075,7 +2072,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(process_open_fds{job=\"app\"})",
+          "expr": "sum(process_open_fds{job=\"$job\"})",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -2177,7 +2174,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(deriv(process_open_fds{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(deriv(process_open_fds{job=\"$job\"}[$__rate_interval]))",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 1,
@@ -2290,7 +2287,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(pgxpool_max_conns{job=\"app\"}) ",
+          "expr": "sum(pgxpool_max_conns{job=\"$job\", db=\"$db\"}) ",
           "hide": false,
           "legendFormat": "Max",
           "range": true,
@@ -2302,7 +2299,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(pgxpool_total_conns{job=\"app\"}) ",
+          "expr": "sum(pgxpool_total_conns{job=\"$job\", db=\"$db\"}) ",
           "legendFormat": "Total",
           "range": true,
           "refId": "total connections"
@@ -2313,7 +2310,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(pgxpool_constructing_conns{job=\"app\"}) ",
+          "expr": "sum(pgxpool_constructing_conns{job=\"$job\", db=\"$db\"}) ",
           "hide": false,
           "legendFormat": "Constructing",
           "range": true,
@@ -2325,7 +2322,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(pgxpool_acquired_conns{job=\"app\"}) ",
+          "expr": "sum(pgxpool_acquired_conns{job=\"$job\", db=\"$db\"}) ",
           "hide": false,
           "legendFormat": "Acquired",
           "range": true,
@@ -2337,7 +2334,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(pgxpool_idle_conns{job=\"app\"}) ",
+          "expr": "sum(pgxpool_idle_conns{job=\"$job\", db=\"$db\"}) ",
           "hide": false,
           "legendFormat": "Idle",
           "range": true,
@@ -2434,7 +2431,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(pgxpool_acquire_count{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(pgxpool_acquire_count{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "interval": "1m",
           "legendFormat": "Acquired ",
           "range": true,
@@ -2446,7 +2443,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(pgxpool_canceled_acquire_count{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(pgxpool_canceled_acquire_count{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "Canceled",
@@ -2459,7 +2456,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(pgxpool_empty_acquire{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(pgxpool_empty_acquire{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "Acquired from empty pool",
@@ -2472,7 +2469,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(pgxpool_acquire_count{job=\"app\"}[$__rate_interval])) + sum(rate(pgxpool_canceled_acquire_count{job=\"app\"}[$__rate_interval])) + sum(rate(pgxpool_empty_acquire{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(pgxpool_acquire_count{job=\"$job\", db=\"$db\"}[$__rate_interval])) + sum(rate(pgxpool_canceled_acquire_count{job=\"$job\", db=\"$db\"}[$__rate_interval])) + sum(rate(pgxpool_empty_acquire{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "Total",
@@ -2570,7 +2567,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(increase(pgxpool_new_conns_count{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(increase(pgxpool_new_conns_count{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "interval": "1m",
           "legendFormat": "New",
           "range": true,
@@ -2582,7 +2579,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(delta(pgxpool_acquired_conns{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(delta(pgxpool_acquired_conns{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "Acquired",
@@ -2595,7 +2592,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(increase(pgxpool_max_idle_destroy_count{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(increase(pgxpool_max_idle_destroy_count{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "Exceeded idle time",
@@ -2608,7 +2605,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(increase(pgxpool_max_lifetime_destroy_count{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(increase(pgxpool_max_lifetime_destroy_count{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "hide": false,
           "interval": "1m",
           "legendFormat": "Exceeded life time",
@@ -2706,7 +2703,7 @@
             "uid": "UTIaISP4k"
           },
           "editorMode": "code",
-          "expr": "sum(rate(pgxpool_acquire_duration_ns{job=\"app\"}[$__rate_interval])) / sum(rate(pgxpool_acquire_count{job=\"app\"}[$__rate_interval]))",
+          "expr": "sum(rate(pgxpool_acquire_duration_ns{job=\"$job\", db=\"$db\"}[$__rate_interval])) / sum(rate(pgxpool_acquire_count{job=\"$job\", db=\"$db\"}[$__rate_interval]))",
           "legendFormat": "Duration",
           "range": true,
           "refId": "acquire time"
@@ -2716,7 +2713,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -2728,7 +2725,7 @@
     "list": [
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "All"
           ],
@@ -2768,6 +2765,62 @@
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "app",
+          "value": "app"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "UTIaISP4k"
+        },
+        "definition": "label_values(job)",
+        "description": "Prometheus job",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Job",
+        "multi": false,
+        "name": "job",
+        "options": [],
+        "query": {
+          "query": "label_values(job)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "master",
+          "value": "master"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "UTIaISP4k"
+        },
+        "definition": "label_values(pgxpool_max_conns,db)",
+        "description": "PostgreSQL Connection Pool for Monitoring",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Database",
+        "multi": false,
+        "name": "db",
+        "options": [],
+        "query": {
+          "query": "label_values(pgxpool_max_conns,db)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
@@ -2779,6 +2832,6 @@
   "timezone": "browser",
   "title": "Hive Backend",
   "uid": "JR7m6zPVz",
-  "version": 2,
+  "version": 4,
   "weekStart": "monday"
 }

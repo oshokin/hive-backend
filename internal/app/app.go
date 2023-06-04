@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/oshokin/hive-backend/internal/api"
 	"github.com/oshokin/hive-backend/internal/config"
 	"github.com/oshokin/hive-backend/internal/db"
@@ -23,7 +22,7 @@ import (
 // Application represents the main application struct.
 type Application struct {
 	config                *config.Configuration           // Application configuration
-	dbPool                *pgxpool.Pool                   // Database connection pool
+	dbCluster             *db.Cluster                     // Database cluster
 	cityRepo              city_repo.Repository            // Repository for managing city data
 	cityService           city_service.Service            // Service for managing city data
 	userRepo              user_repo.Repository            // Repository for managing user data
@@ -42,18 +41,18 @@ func NewApplication(ctx context.Context) (*Application, error) {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	dbPool, err := db.GetDBPool(ctx, config.DBConfig)
+	dbCluster, err := db.NewCluster(ctx, config.DBClusterConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	logger.SetLevel(config.LogLevel)
 
-	cityRepo := city_repo.NewRepository(dbPool)
+	cityRepo := city_repo.NewRepository(dbCluster)
 	cityService := city_service.NewService(cityRepo)
-	userRepo := user_repo.NewRepository(dbPool)
+	userRepo := user_repo.NewRepository(dbCluster)
 	userService := user_service.NewService(userRepo, cityService, config.FakeUserPassword)
-	randomizingJobRepo := randomizing_job_repo.NewRepository(dbPool)
+	randomizingJobRepo := randomizing_job_repo.NewRepository(dbCluster)
 	randomizingJobService := randomizing_job_service.NewService(randomizingJobRepo, userService)
 	server := api.NewServer(userService,
 		cityService,
@@ -62,7 +61,7 @@ func NewApplication(ctx context.Context) (*Application, error) {
 
 	return &Application{
 		config:                config,
-		dbPool:                dbPool,
+		dbCluster:             dbCluster,
 		cityRepo:              cityRepo,
 		cityService:           cityService,
 		userRepo:              userRepo,
@@ -82,7 +81,7 @@ func (app *Application) Run(ctx context.Context) {
 		syscall.SIGINT)
 
 	defer stopReceivingSignals()
-	defer app.dbPool.Close()
+	defer app.dbCluster.Close()
 
 	app.server.Start(ctx, app.config.ServerPort)
 	app.randomizingJobService.Start(ctx)

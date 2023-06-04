@@ -11,10 +11,10 @@ import (
 	"github.com/oshokin/hive-backend/internal/common"
 	"github.com/oshokin/hive-backend/internal/config"
 	"github.com/oshokin/hive-backend/internal/logger"
-	chi_prometheus "github.com/oshokin/hive-backend/internal/middleware/chi-prometheus"
 	city_service "github.com/oshokin/hive-backend/internal/service/city"
 	randomizing_job_service "github.com/oshokin/hive-backend/internal/service/randomizing_job"
 	user_service "github.com/oshokin/hive-backend/internal/service/user"
+	chi_prometheus "github.com/oshokin/hive-backend/internal/util/chi-prometheus"
 	go_cache "github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

@@ -7,7 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	pgx "github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oshokin/hive-backend/internal/db"
 )
 
 type (
@@ -20,7 +20,7 @@ type (
 	}
 
 	repository struct {
-		db *pgxpool.Pool
+		cluster *db.Cluster
 	}
 )
 
@@ -33,14 +33,13 @@ const (
 	columnStartedAt     = "started_at"
 	columnFinishedAt    = "finished_at"
 	columnErrorMessage  = "error_message"
-
-	// maxLimit defines the maximum limit for list requests.
-	maxLimit = 50
 )
 
-// NewRepository creates a new repository with the given database connection pool.
-func NewRepository(db *pgxpool.Pool) Repository {
-	return &repository{db: db}
+// NewRepository creates a new Repository instance with the given database cluster.
+func NewRepository(cluster *db.Cluster) Repository {
+	return &repository{
+		cluster: cluster,
+	}
 }
 
 func (r *repository) Create(ctx context.Context, expectedCount int64) (int64, error) {
@@ -56,7 +55,7 @@ func (r *repository) Create(ctx context.Context, expectedCount int64) (int64, er
 
 	var id int64
 
-	err = r.db.QueryRow(ctx, query, args...).Scan(&id)
+	err = r.cluster.Write().QueryRow(ctx, query, args...).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("failed to read query results: %w", err)
 	}
@@ -83,7 +82,7 @@ func (r *repository) GetByID(ctx context.Context, id int64) (*RandomizingJob, er
 
 	job := new(RandomizingJob)
 
-	err = r.db.QueryRow(ctx, query, args...).
+	err = r.cluster.Write().QueryRow(ctx, query, args...).
 		Scan(&job.ID,
 			&job.ExpectedCount,
 			&job.CurrentCount,
@@ -131,7 +130,7 @@ func (r *repository) GetList(ctx context.Context,
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
+	rows, err := r.cluster.Write().Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run select query: %w", err)
 	}
@@ -209,7 +208,7 @@ func (r *repository) Update(ctx context.Context, job *RandomizingJob, fields *Up
 		return fmt.Errorf("failed to build query: %w", err)
 	}
 
-	commandTag, err := r.db.Exec(ctx, query, args...)
+	commandTag, err := r.cluster.Write().Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to execute query: %w", err)
 	}

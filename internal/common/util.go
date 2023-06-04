@@ -4,9 +4,13 @@ import (
 	"crypto/rand"
 	"math/big"
 	m_rand "math/rand"
+	"time"
 
+	"github.com/lazada/awg"
 	"golang.org/x/exp/constraints"
 )
+
+const defaultTimeout = 1 * time.Minute
 
 // GetRandItemFromList selects a random item from a list and returns it.
 // The random number generator used is the secure cryptographic RNG rand.Reader.
@@ -49,4 +53,14 @@ func Max[T constraints.Ordered](x, y T) T {
 	}
 
 	return y
+}
+
+// GetDefaultWG initializes default waitgroup and returns it.
+func GetDefaultWG(capacity int) *awg.AdvancedWaitGroup {
+	wg := &awg.AdvancedWaitGroup{}
+	wg.SetCapacity(capacity)
+	wg.SetStopOnError(true)
+	wg.SetTimeout(defaultTimeout)
+
+	return wg
 }

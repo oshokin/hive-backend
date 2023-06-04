@@ -2,4 +2,5 @@
 .vscode/*
 !.vscode/launch_example.json
 bin/
+data/
 vendor/

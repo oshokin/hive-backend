@@ -18,6 +18,15 @@ GOOSE_BIN:=$(LOCAL_BIN)/goose
 GOOSE_TAG:=3.10.0
 K6_BIN:=$(LOCAL_BIN)/k6
 K6_TAG:=0.43.1
+USER_ID:=$(shell id -u)
+USER_GROUP_ID:=$(shell id -g)
+DB_MASTER_CONTAINER:=hive-backend-db-master
+DB_SYNC_CONTAINER:=hive-backend-db-sync
+DB_ASYNC_CONTAINER:=hive-backend-db-async
+DB_SYNC_DATA:=$(CURDIR)/data/db-sync
+DB_ASYNC_DATA:=$(CURDIR)/data/db-async
+DB_TEMP_DATA:=$(CURDIR)/data/temp
+DB_MASTER_BACKUP_DIR:=/backup
 
 ifneq ($(wildcard $(GOLANGCI_BIN)),)
 GOLANGCI_BIN_VERSION:=$(shell $(GOLANGCI_BIN) --version)
@@ -46,7 +55,7 @@ endif
 ifneq ($(wildcard $(K6_BIN)),)
 K6_BIN_VERSION:=$(shell $(K6_BIN) version)
 ifneq ($(K6_BIN_VERSION),)
-K6_BIN_VERSION_SHORT:=$(shell echo "$(K6_BIN_VERSION)" | sed -E 's/k6 v(.*) \(.*\)/\1/g')
+K6_BIN_VERSION_SHORT:=$(shell echo "$(K6_BIN_VERSION)" | sed -E 's/^k6 v([0-9.]*).*/\1/')
 else
 K6_BIN_VERSION_SHORT:=0
 endif
@@ -138,14 +147,47 @@ compose-clean:
 .PHONY: install-k6
 install-k6:
 ifeq ($(wildcard $(K6_BIN)),)
-	$(info Downloading k6 v$(K6_TAG))
-	@curl -OL https://github.com/loadimpact/k6/releases/download/v$(K6_TAG)/k6-v$(K6_TAG)-$(OS)-$(ARCH).tar.gz
-	@tar -xzf k6-v$(K6_TAG)-$(OS)-$(ARCH).tar.gz
-	@mkdir -p $(LOCAL_BIN)
-	@mv k6-v$(K6_TAG)-$(OS)-$(ARCH)/k6 $(LOCAL_BIN)
-	@rm -rf k6-v$(K6_TAG)-$(OS)-$(ARCH) k6-v$(K6_TAG)-$(OS)-$(ARCH).tar.gz
+	cd $(LOCAL_BIN) && \
+	GOBIN=$(LOCAL_BIN) $ go install go.k6.io/xk6/cmd/xk6@latest && \
+	$(LOCAL_BIN)/xk6 build --with github.com/grafana/xk6-sql && \
+	rm -rf $(LOCAL_BIN)/xk6
 K6_BIN:=$(LOCAL_BIN)/k6
 endif
+
+.PHONY: sync-replicas
+sync-replicas:
+	@if [ $$(docker ps -q -f name=$(DB_SYNC_CONTAINER)) ]; then docker stop $(DB_SYNC_CONTAINER); fi
+	@if [ $$(docker ps -q -f name=$(DB_ASYNC_CONTAINER)) ]; then docker stop $(DB_ASYNC_CONTAINER); fi
+	@mkdir -p $(DB_SYNC_DATA) $(DB_ASYNC_DATA)
+	@if docker inspect --format '{{.State.Health.Status}}' $(DB_MASTER_CONTAINER) | grep -q healthy; then \
+	    docker exec $(DB_MASTER_CONTAINER) bash -c "rm -rf $(DB_MASTER_BACKUP_DIR) && pg_basebackup -h localhost -D $(DB_MASTER_BACKUP_DIR) -U replicator -v -P --wal-method=stream" && \
+		docker cp $(DB_MASTER_CONTAINER):$(DB_MASTER_BACKUP_DIR) $(DB_TEMP_DATA) && \
+		docker exec $(DB_MASTER_CONTAINER) bash -c "rm -rf $(DB_MASTER_BACKUP_DIR)" && \
+		sudo chown -R $(USER_ID):$(USER_GROUP_ID) $(DB_TEMP_DATA) && \
+		sudo rm -rf $(DB_SYNC_DATA) && \
+		sudo rm -rf $(DB_ASYNC_DATA) && \
+		cp -r $(DB_TEMP_DATA)/. $(DB_SYNC_DATA) && \
+		cp -r $(DB_TEMP_DATA)/. $(DB_ASYNC_DATA) && \
+		rm -rf $(DB_TEMP_DATA) && \
+		docker compose up -d $(DB_SYNC_CONTAINER) $(DB_ASYNC_CONTAINER); \
+	else \
+		@echo "$(DB_MASTER_CONTAINER) is not running or not healthy."; \
+		@exit 1; \
+	fi
+
+.PHONY: stop-replicas
+stop-replicas:
+	@if [ $$(docker ps -q -f name=$(DB_SYNC_CONTAINER)) ]; then docker stop $(DB_SYNC_CONTAINER); fi
+	@if [ $$(docker ps -q -f name=$(DB_ASYNC_CONTAINER)) ]; then docker stop $(DB_ASYNC_CONTAINER); fi
+	sudo chown -R $(USER_ID):$(USER_GROUP_ID) $(DB_SYNC_DATA) && \
+	sudo chown -R $(USER_ID):$(USER_GROUP_ID) $(DB_ASYNC_DATA)
+
+.PHONY: clean-replicas
+clean-replicas:
+	@if [ $$(docker ps -q -f name=$(DB_SYNC_CONTAINER)) ]; then docker clean $(DB_SYNC_CONTAINER); fi
+	@if [ $$(docker ps -q -f name=$(DB_ASYNC_CONTAINER)) ]; then docker clean $(DB_ASYNC_CONTAINER); fi
+	sudo rm -rf $(DB_SYNC_DATA) && \
+	sudo rm -rf $(DB_ASYNC_DATA)
 
 .PHONY: help
 help:
@@ -167,3 +209,6 @@ help:
 	@echo "  compose-down            Run docker-compose down"
 	@echo "  compose-clean           Run docker-compose down -v"
 	@echo "  install-k6              Download and install k6 to $(LOCAL_BIN) directory if it's not already installed."
+	@echo "  sync-replicas           Stop, backup and sync the primary database to the synchronous and asynchronous replicas"
+	@echo "  stop-replicas           Stop the synchronous and asynchronous replicas and change ownership of their data directories"
+	@echo "  clean-replicas          Stop and clean the synchronous and asynchronous replicas and remove their data directories"

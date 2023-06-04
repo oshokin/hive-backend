@@ -11,7 +11,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	pgx "github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oshokin/hive-backend/internal/db"
 	"github.com/oshokin/hive-backend/internal/repository/common"
 )
 
@@ -48,7 +48,7 @@ type (
 	}
 
 	repository struct {
-		db *pgxpool.Pool
+		cluster *db.Cluster
 	}
 )
 
@@ -74,9 +74,11 @@ var insertRows = []string{columnEmail,
 	columnGender,
 	columnInterests}
 
-// NewRepository creates a new Repository instance.
-func NewRepository(db *pgxpool.Pool) Repository {
-	return &repository{db: db}
+// NewRepository creates a new Repository instance with the given database cluster.
+func NewRepository(cluster *db.Cluster) Repository {
+	return &repository{
+		cluster: cluster,
+	}
 }
 
 func (r *repository) CheckIfExistByEmails(ctx context.Context, emails []string) (map[string]struct{}, error) {
@@ -91,7 +93,7 @@ func (r *repository) CheckIfExistByEmails(ctx context.Context, emails []string) 
 		return nil, fmt.Errorf("failed to generate query: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx, query, args...)
+	rows, err := r.cluster.ReadRR().Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run query: %w", err)
 	}
@@ -125,7 +127,7 @@ func (r *repository) CheckIfExistsByEmail(ctx context.Context, email string) (bo
 
 	var id int64
 
-	err = r.db.QueryRow(ctx, sql, args...).Scan(&id)
+	err = r.cluster.ReadRR().QueryRow(ctx, sql, args...).Scan(&id)
 	if err == nil {
 		return id != 0, nil
 	}
@@ -150,7 +152,7 @@ func (r *repository) Create(ctx context.Context, u *User) (int64, error) {
 
 	var id int64
 
-	err = r.db.QueryRow(ctx, sql, args...).Scan(&id)
+	err = r.cluster.ReadRR().QueryRow(ctx, sql, args...).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("failed to read query results: %w", err)
 	}
@@ -163,7 +165,9 @@ func (r *repository) CreateBatch(ctx context.Context, users []*User) (int64, err
 		return 0, nil
 	}
 
-	conn, err := r.db.Acquire(ctx)
+	writeDB := r.cluster.Write()
+
+	conn, err := writeDB.Acquire(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to acquire connection: %w", err)
 	}
@@ -184,7 +188,7 @@ func (r *repository) CreateBatch(ctx context.Context, users []*User) (int64, err
 				user.Interests}, nil
 		})
 
-	copyCount, err := r.db.CopyFrom(ctx,
+	copyCount, err := writeDB.CopyFrom(ctx,
 		pgx.Identifier{tableName},
 		insertRows,
 		rowSrc)
@@ -231,7 +235,7 @@ func (r *repository) GetLoginDataByEmail(ctx context.Context, email string) (*Lo
 
 	var u LoginData
 
-	err = r.db.QueryRow(ctx, sql, args...).Scan(&u.ID,
+	err = r.cluster.ReadRR().QueryRow(ctx, sql, args...).Scan(&u.ID,
 		&u.PasswordHash)
 	if err == nil {
 		return &u, nil
@@ -266,7 +270,7 @@ func (r *repository) SearchByNamePrefixes(ctx context.Context,
 		return nil, fmt.Errorf("failed to build select query: %w", err)
 	}
 
-	rows, err := r.db.Query(ctx, selectQuery, selectArgs...)
+	rows, err := r.cluster.ReadRR().Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run select query: %w", err)
 	}
@@ -326,7 +330,7 @@ func (r *repository) selectDefaultUserFields(limit uint64) sq.SelectBuilder {
 func (r *repository) scanUser(ctx context.Context, sql string, args ...any) (*User, error) {
 	var u User
 
-	err := r.db.QueryRow(ctx, sql, args...).Scan(&u.ID,
+	err := r.cluster.ReadRR().QueryRow(ctx, sql, args...).Scan(&u.ID,
 		&u.Email,
 		&u.PasswordHash,
 		&u.CityID,

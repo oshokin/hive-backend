@@ -1,0 +1,2 @@
+CREATE ROLE replicator WITH LOGIN REPLICATION PASSWORD 'hard-password';
+
